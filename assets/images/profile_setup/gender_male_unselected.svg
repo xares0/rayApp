@@ -1,0 +1,21 @@
+<svg preserveAspectRatio="none" width="100%" height="100%" overflow="visible" style="display: block;" viewBox="0 0 56 77.3" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="&#231;&#148;&#183;&#230;&#128;&#167;-&#230;&#156;&#170;&#233;&#128;&#137;&#228;&#184;&#173;">
+<g id="Ellipse 2789" filter="url(#filter0_f_0_38)">
+<ellipse cx="27" cy="63.5" rx="14" ry="5.5" fill="#DDE2F7"/>
+</g>
+<circle id="Ellipse 2783" cx="28" cy="28" r="28" fill="url(#paint0_linear_0_38)"/>
+<rect id="Rectangle 346243228" x="9.33331" y="15.1666" width="7" height="9.33333" rx="3.5" fill="#13113A"/>
+<rect id="Rectangle 346243229" x="26.8333" y="15.1666" width="7" height="9.33333" rx="3.5" fill="#13113A"/>
+</g>
+<defs>
+<filter id="filter0_f_0_38" x="4.7" y="49.7" width="44.6" height="27.6" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+<feFlood flood-opacity="0" result="BackgroundImageFix"/>
+<feBlend mode="normal" in="SourceGraphic" in2="BackgroundImageFix" result="shape"/>
+<feGaussianBlur stdDeviation="4.15" result="effect1_foregroundBlur_0_38"/>
+</filter>
+<linearGradient id="paint0_linear_0_38" x1="28" y1="0" x2="28" y2="56" gradientUnits="userSpaceOnUse">
+<stop stop-color="#646CFF"/>
+<stop offset="1" stop-color="#C7D9FF"/>
+</linearGradient>
+</defs>
+</svg>

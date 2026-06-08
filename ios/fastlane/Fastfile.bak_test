@@ -1,0 +1,17 @@
+default_platform(:ios)
+platform :ios do
+  lane :test_191 do
+    app_store_connect_api_key(
+      key_id: "XHA9VM622Z",
+      issuer_id: "317cf7b1-ad60-408e-b78a-42a1bd395b0b",
+      key_filepath: "/Users/eno/.private_keys/AuthKey_XHA9VM622Z.p8",
+      in_house: false
+    )
+    sigh(
+      app_identifier: "com.photomate.app",
+      development: true,
+      force: true,
+      output_path: "/tmp/sigh_test"
+    )
+  end
+end
