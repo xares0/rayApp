@@ -11,7 +11,7 @@ import '../../../repositories/app_repository.dart';
 import '../../../widgets/interaction_utils.dart';
 import '../../../widgets/smart_avatar.dart';
 import '../../../widgets/smart_image.dart';
-import '../../moment/video_player_screen.dart';
+import '../../../models/post.dart';
 
 class MyPostDetailScreen extends ConsumerWidget {
   const MyPostDetailScreen({super.key, required this.postId});
@@ -200,13 +200,20 @@ class MyPostDetailScreen extends ConsumerWidget {
               Padding(
                 padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
                 child: GestureDetector(
+                  // Figma v4 `37:624`：帖子里的视频点击进**全屏视频查看**（非基础播放器）
                   onTap: () {
-                    Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (_) =>
-                            VideoPlayerScreen(videoUrl: hydratedPost.videoUrl!),
-                      ),
-                    );
+                    final videoPosts = AppRepository.instance.posts
+                        .where((p) => (p.videoUrl ?? '').isNotEmpty)
+                        .toList();
+                    final idx = videoPosts
+                        .indexWhere((p) => p.id == hydratedPost.id);
+                    // 走 go_router 声明式（与裸 Navigator.push 混用会崩溃）
+                    context.push('/video_feed', extra: <String, dynamic>{
+                      'posts': videoPosts.isEmpty
+                          ? <Post>[hydratedPost]
+                          : videoPosts,
+                      'initialIndex': idx < 0 ? 0 : idx,
+                    });
                   },
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(8),

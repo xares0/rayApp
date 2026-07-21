@@ -112,7 +112,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             children: [
               const SizedBox(height: 56),
               const Text(
-                '欢迎来到photomate',
+                '欢迎来到越她 photomate',
                 style: TextStyle(
                   fontSize: 28,
                   fontWeight: FontWeight.w700,

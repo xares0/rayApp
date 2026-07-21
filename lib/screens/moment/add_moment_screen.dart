@@ -152,44 +152,16 @@ class _AddMomentScreenState extends ConsumerState<AddMomentScreen> {
       return true;
     }
 
-    final action = await showDialog<_ExitAction>(
-      context: context,
-      builder: (dialogContext) {
-        return AlertDialog(
-          title: const Text('退出发布'),
-          content: const Text('当前内容还未发布，是否保存草稿？'),
-          actions: [
-            TextButton(
-              onPressed: () =>
-                  Navigator.of(dialogContext).pop(_ExitAction.cancel),
-              child: const Text('继续编辑'),
-            ),
-            TextButton(
-              onPressed: () =>
-                  Navigator.of(dialogContext).pop(_ExitAction.discardAndExit),
-              child: const Text('不保存'),
-            ),
-            TextButton(
-              onPressed: () =>
-                  Navigator.of(dialogContext).pop(_ExitAction.saveAndExit),
-              child: const Text('保存草稿'),
-            ),
-          ],
-        );
-      },
+    // PDF 3.4：发布编辑返回 → 温馨提示弹窗，确认清空内容退出 / 取消停留当前页
+    final confirm = await showFigmaTrashConfirmDialog(
+      context,
+      title: '温馨提示',
+      message: '您有正在编辑的动态，退出后输入的内容将被清空，确认退出吗？',
     );
 
-    if (action == null || action == _ExitAction.cancel) return false;
-    if (action == _ExitAction.discardAndExit) {
-      await _clearDraft();
-      return true;
-    }
-
-    await _saveDraft();
-    if (mounted && showSavedToast) {
-      ScaffoldMessenger.of(context)
-          .showSnackBar(const SnackBar(content: Text('草稿已保存')));
-    }
+    // 取消 / 关闭 → 停留当前页；确认 → 清空发布内容并退出
+    if (!confirm) return false;
+    await _clearDraft();
     return true;
   }
 
@@ -810,11 +782,6 @@ class _AddMomentScreenState extends ConsumerState<AddMomentScreen> {
   }
 }
 
-enum _ExitAction {
-  cancel,
-  discardAndExit,
-  saveAndExit,
-}
 
 class _SelectableMedia {
   final String id;

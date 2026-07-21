@@ -12,6 +12,7 @@ class Post with _$Post {
     required String userId,
     required List<String> images,
     required String content,
+    @Default('') String contentOriginal, // 动态文本原文（译文=content），空=无原文不显示翻译
     @Default(0) int likesCount,
     @Default(0) int commentsCount,
     @Default(false) bool isLiked,

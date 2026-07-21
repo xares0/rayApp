@@ -276,7 +276,8 @@ class _GenderAgeBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: 36,
+      // width: 36, // 含性别图标时的宽度
+      width: 24,
       height: 14,
       decoration: BoxDecoration(
         color: const Color(0x33D6A4FF), // rgba(214,164,255,0.2)
@@ -285,20 +286,21 @@ class _GenderAgeBadge extends StatelessWidget {
       child: Stack(
         children: [
           // 性别图标 — 预留待确认：Material icon 近似替代 Figma 自定义男/女图标
+          // Positioned(
+          //   left: 6,
+          //   top: 2,
+          //   width: 10,
+          //   height: 10,
+          //   child: Icon(
+          //     key: ValueKey<String>('visitors.badgeIcon.$itemIndex'),
+          //     isMale ? Icons.male : Icons.female,
+          //     size: 10,
+          //     color: isMale ? const Color(0xFF6BA3E0) : const Color(0xFFE06B8A),
+          //   ),
+          // ),
           Positioned(
-            left: 6,
-            top: 2,
-            width: 10,
-            height: 10,
-            child: Icon(
-              key: ValueKey<String>('visitors.badgeIcon.$itemIndex'),
-              isMale ? Icons.male : Icons.female,
-              size: 10,
-              color: isMale ? const Color(0xFF6BA3E0) : const Color(0xFFE06B8A),
-            ),
-          ),
-          Positioned(
-            left: 18,
+            // left: 18, // 含性别图标时的位置
+            left: 4,
             top: 0,
             width: 16,
             height: 14,

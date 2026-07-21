@@ -8,12 +8,13 @@ import 'package:go_router/go_router.dart';
 import '../../core/router/user_profile_route.dart';
 import '../../models/post.dart';
 import '../../providers/auth_provider.dart';
-import '../../providers/blocked_users_provider.dart';
 import '../../providers/feed_provider.dart';
 import '../../providers/interaction_badge_provider.dart';
 import '../../repositories/app_repository.dart';
 import '../../widgets/category_tab_bar.dart';
+import '../../widgets/hi_greet_button.dart';
 import '../../widgets/interaction_utils.dart';
+import '../../widgets/moment_text.dart';
 import '../../widgets/smart_avatar.dart';
 import '../../widgets/smart_image.dart';
 
@@ -30,6 +31,9 @@ import '../../widgets/smart_image.dart';
 // Banner：高166px, 圆角14px, top 41px
 // 拍一拍 logo：78x30px, left 13px, 渐变 #60FCFF→#CC6EFF
 
+/// 动态卡片「Hi」搭讪预设招呼语（与拍友列表一致）。
+const String _kDiscoverGreeting = '你的照片很好看，可以教教我怎么拍吗！';
+
 class DiscoverScreen extends ConsumerStatefulWidget {
   const DiscoverScreen({super.key});
 
@@ -43,18 +47,6 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
       'assets/images/style_top/hero_banner_figma.png';
   static const _paipaiTextAsset =
       'assets/images/style_top/paipai_text_figma.png';
-  static const _sampleAvatarAsset =
-      'assets/images/avatars/female/female_04.jpg';
-  static const _samplePostImages = [
-    'assets/images/posts/old_street_1.jpg',
-    'assets/images/posts/old_street_2.jpg',
-    'assets/images/posts/building_facade.jpg',
-  ];
-  static const _sampleSecondPostImages = [
-    'assets/images/posts/building_facade.jpg',
-    'assets/images/posts/old_street_1.jpg',
-    'assets/images/posts/old_street_2.jpg',
-  ];
 
   final ScrollController _scrollController = ScrollController();
   bool _isLoadingMore = false;
@@ -89,17 +81,14 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
     return false;
   }
 
-  Future<void> _handlePostAction(Post post, _PostAction action) async {
-    if (action == _PostAction.report) {
-      // 跳转独立举报页（路由待主程序注册后生效，当前用 Navigator 直接 push）
-      context.push('/report?targetType=post&targetId=${post.id}');
-      return;
-    }
-    final confirmed = await showBlockConfirmDialog(context);
-    if (!mounted) return;
-    if (!confirmed) return;
-    ref.read(blockedUsersProvider.notifier).blockUser(post.userId);
-    showAppToast(context, '拉黑成功');
+  /// 点击动态卡片「Hi」搭讪：进入与作者的私聊并自动发送预设招呼语。
+  /// 举报/拉黑已迁移至动态详情页（卡片点击进入）。
+  void _greetUser(String userId) {
+    final uri = Uri(
+      path: '/chat/$userId',
+      queryParameters: <String, String>{'greeting': _kDiscoverGreeting},
+    );
+    context.push(uri.toString());
   }
 
   bool _isFollowingTab() => _selectedTabIndex == 1;
@@ -199,7 +188,7 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
               key: const ValueKey<String>('discover.notifyPrimary'),
               assetPath: 'assets/images/discover/icon_notify_primary_figma.svg',
               hasUnread: ref.watch(interactionBadgeProvider),
-              onTap: () => context.push('/system_notifications'),
+              onTap: () => context.push('/interaction_notifications'),
             ),
           ),
           Positioned.fill(
@@ -546,18 +535,15 @@ class _DiscoverBlurBlob extends StatelessWidget {
 // ── Post Card 扩展 ────────────────────────────────────────────
 extension _DiscoverScreenUi on _DiscoverScreenState {
   Widget _buildDiscoverPost(BuildContext context, Post post, int index) {
+    // 示例卡与普通卡的差异仅在版式，内容一律取自真实 post，
+    // 保证列表与详情页展示一致。
     final useFigmaSample = _usesFigmaDynamicSample(post);
-    final showImages = useFigmaSample
-        ? (index == 0
-            ? _DiscoverScreenState._samplePostImages
-            : _DiscoverScreenState._sampleSecondPostImages)
-        : post.images.take(3).toList();
-    final authorName = useFigmaSample ? '棠也' : post.author?.name ?? '未知用户';
-    final avatarSource = useFigmaSample
-        ? _DiscoverScreenState._sampleAvatarAsset
-        : post.author?.avatarUrl;
-    final content = useFigmaSample ? '探索未知，感受自然之美。' : post.content;
-    final timeText = useFigmaSample ? '1个小时前' : _formatTime(post.createdAt);
+    final showImages = post.images.take(3).toList();
+    final authorName = post.author?.name ?? '未知用户';
+    final avatarSource = post.author?.avatarUrl;
+    final content = post.content;
+    final contentOriginal = post.contentOriginal;
+    final timeText = _formatTime(post.createdAt);
     final likesCount = post.likesCount;
     final commentsCount = post.commentsCount;
     final isLiked = post.isLiked;
@@ -573,6 +559,7 @@ extension _DiscoverScreenUi on _DiscoverScreenState {
           authorName: authorName,
           avatarSource: avatarSource,
           content: content,
+          contentOriginal: contentOriginal,
           timeText: timeText,
           likesCount: likesCount,
           commentsCount: commentsCount,
@@ -644,58 +631,27 @@ extension _DiscoverScreenUi on _DiscoverScreenState {
                       ],
                     ),
                   ),
-                  // 更多按钮: Figma 24x24 icon
-                  PopupMenuButton<_PostAction>(
-                    icon: const Icon(
-                      Icons.more_horiz,
-                      color: Color(0xFFC0C0C0),
-                      size: 24,
-                    ),
-                    padding: EdgeInsets.zero,
-                    color: const Color(0xFF4A4A4A),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    onSelected: (action) => _handlePostAction(post, action),
-                    itemBuilder: (_) => const [
-                      PopupMenuItem<_PostAction>(
-                        value: _PostAction.report,
-                        child: Center(
-                          child: Text(
-                            '举报',
-                            style: TextStyle(color: Colors.white, fontSize: 16),
-                          ),
-                        ),
-                      ),
-                      PopupMenuItem<_PostAction>(
-                        value: _PostAction.block,
-                        child: Center(
-                          child: Text(
-                            '拉黑',
-                            style: TextStyle(color: Colors.white, fontSize: 16),
-                          ),
-                        ),
-                      ),
-                    ],
+                  // Figma v4：右上角「Hi」搭讪钮（举报/拉黑见动态详情页）
+                  GestureDetector(
+                    onTap: () => _greetUser(post.userId),
+                    behavior: HitTestBehavior.opaque,
+                    child: const HiGreetButton(),
                   ),
                 ],
               ),
 
               const SizedBox(height: 10), // Figma: 318-296-12=10
 
-              // ── 内容文字: 14px, #333 ──
-              Text(
-                content,
-                key: useFigmaSample
-                    ? ValueKey<String>('discover.postContent.$index')
-                    : null,
+              // ── 内容文字: 14px, #333（译文/原文翻译 + 2 行展开收起）──
+              MomentText(
+                key: ValueKey<String>('discover.postContent.$index'),
+                translated: content,
+                original: post.contentOriginal,
                 style: const TextStyle(
                   fontFamily: 'PingFang SC',
                   color: Color(0xFF333333),
                   fontSize: 14,
                 ),
-                maxLines: 3,
-                overflow: TextOverflow.ellipsis,
               ),
 
               // ── 图片区 ──
@@ -776,6 +732,7 @@ extension _DiscoverScreenUi on _DiscoverScreenState {
     required String authorName,
     required String? avatarSource,
     required String content,
+    required String contentOriginal,
     required String timeText,
     required int likesCount,
     required int commentsCount,
@@ -783,147 +740,136 @@ extension _DiscoverScreenUi on _DiscoverScreenState {
     required List<String> showImages,
     required VoidCallback onLikeTap,
   }) {
-    return SizedBox(
+    // vv2 示例卡：与普通动态卡一致采用弹性布局，正文走 MomentText
+    // （翻译图标 + 展开/收起 + 双语同显），避免固定高度无法容纳原文。
+    return DecoratedBox(
       key: ValueKey<String>('discover.postCard.$index'),
-      width: 347,
-      height: 229,
-      child: DecoratedBox(
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(18),
-        ),
-        child: Stack(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(18),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(14, 16, 14, 14),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Positioned(
-              left: 14,
-              top: 16,
-              width: 35,
-              height: 35,
-              child: GestureDetector(
-                onTap: () => openUserProfile(context, post.userId),
-                child: SmartAvatar(
-                  key: ValueKey<String>('discover.postAvatar.$index'),
-                  radius: 17.5,
-                  source: avatarSource,
-                  fallbackName: authorName,
-                ),
-              ),
-            ),
-            Positioned(
-              right: 6,
-              top: 21,
-              width: 24,
-              height: 24,
-              child: SvgPicture.asset(
-                key: ValueKey<String>('discover.postMore.$index'),
-                'assets/images/discover/icon_more_figma.svg',
-                width: 24,
-                height: 24,
-                fit: BoxFit.fill,
-              ),
-            ),
-            Positioned(
-              left: 55,
-              top: 16,
-              width: 80,
-              height: 20,
-              child: Text(
-                key: ValueKey<String>('discover.postName.$index'),
-                authorName,
-                style: const TextStyle(
-                  fontFamily: 'PingFang SC',
-                  fontWeight: FontWeight.w500,
-                  fontSize: 14,
-                  color: Color(0xFF333333),
-                  height: 20 / 14,
-                ),
-              ),
-            ),
-            Positioned(
-              left: 55,
-              top: 37,
-              width: 80,
-              height: 17,
-              child: Text(
-                key: ValueKey<String>('discover.postTime.$index'),
-                timeText,
-                style: const TextStyle(
-                  fontFamily: 'PingFang SC',
-                  color: Color(0xFFC0C0C0),
-                  fontSize: 12,
-                  height: 17 / 12,
-                ),
-              ),
-            ),
-            Positioned(
-              left: 14,
-              top: 59,
-              width: 220,
-              height: 20,
-              child: Text(
-                key: ValueKey<String>('discover.postContent.$index'),
-                content,
-                style: const TextStyle(
-                  fontFamily: 'PingFang SC',
-                  color: Color(0xFF333333),
-                  fontSize: 14,
-                  height: 20 / 14,
-                ),
-              ),
-            ),
-            for (int i = 0; i < 3; i++)
-              Positioned(
-                left: 14 + i * 109,
-                top: 85,
-                width: 102,
-                height: 104,
-                child: GestureDetector(
-                  onTap: () => showImagePreview(context, showImages[i]),
-                  child: SizedBox(
-                    key: ValueKey<String>('discover.postImage.$index.$i'),
-                    width: 102,
-                    height: 104,
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(5.72),
-                      child: Stack(
-                        fit: StackFit.expand,
-                        children: [
-                          SmartImage(
-                            source: showImages[i],
-                            fit: BoxFit.cover,
-                          ),
-                        ],
-                      ),
-                    ),
+            // ── 用户信息行（头像 35 + 间距 6 + 昵称/时间 + Hi 搭讪钮）──
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                GestureDetector(
+                  onTap: () => openUserProfile(context, post.userId),
+                  child: SmartAvatar(
+                    key: ValueKey<String>('discover.postAvatar.$index'),
+                    radius: 17.5,
+                    source: avatarSource,
+                    fallbackName: authorName,
                   ),
                 ),
-              ),
-            Positioned(
-              left: 225,
-              top: 197,
-              height: 20,
-              child: GestureDetector(
-                behavior: HitTestBehavior.opaque,
-                onTap: onLikeTap,
-                child: Row(
-                  key: ValueKey<String>('discover.postLikeGroup.$index'),
-                  children: [
-                    if (isLiked)
-                      SvgPicture.asset(
-                        'assets/images/discover/icon_like_on_figma.svg',
-                        width: 16,
-                        height: 16,
-                        fit: BoxFit.fill,
-                      )
-                    else
-                      const Icon(
-                        Icons.favorite_border,
-                        size: 16,
-                        color: Color(0xFFC0C0C0),
+                const SizedBox(width: 6),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        key: ValueKey<String>('discover.postName.$index'),
+                        authorName,
+                        style: const TextStyle(
+                          fontFamily: 'PingFang SC',
+                          fontWeight: FontWeight.w500,
+                          fontSize: 14,
+                          color: Color(0xFF333333),
+                          height: 20 / 14,
+                        ),
                       ),
+                      const SizedBox(height: 1),
+                      Text(
+                        key: ValueKey<String>('discover.postTime.$index'),
+                        timeText,
+                        style: const TextStyle(
+                          fontFamily: 'PingFang SC',
+                          color: Color(0xFFC0C0C0),
+                          fontSize: 12,
+                          height: 17 / 12,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                // Figma v4：卡片右上角为「Hi」搭讪钮（34×34，蓝→紫渐变），非 more 菜单。
+                GestureDetector(
+                  onTap: () => _greetUser(post.userId),
+                  behavior: HitTestBehavior.opaque,
+                  child: HiGreetButton(
+                    key: ValueKey<String>('discover.postHi.$index'),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 10),
+            // ── 内容文字: 译文/原文翻译 + 2 行展开收起 ──
+            MomentText(
+              key: ValueKey<String>('discover.postContent.$index'),
+              translated: content,
+              original: contentOriginal,
+              style: const TextStyle(
+                fontFamily: 'PingFang SC',
+                color: Color(0xFF333333),
+                fontSize: 14,
+              ),
+            ),
+            const SizedBox(height: 10),
+            _buildImageRow(context, post, showImages, index),
+            const SizedBox(height: 12),
+            // ── 互动行: 点赞 + 评论, 右对齐 ──
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onTap: onLikeTap,
+                  child: Row(
+                    key: ValueKey<String>('discover.postLikeGroup.$index'),
+                    children: [
+                      if (isLiked)
+                        SvgPicture.asset(
+                          'assets/images/discover/icon_like_on_figma.svg',
+                          width: 16,
+                          height: 16,
+                          fit: BoxFit.fill,
+                        )
+                      else
+                        const Icon(
+                          Icons.favorite_border,
+                          size: 16,
+                          color: Color(0xFFC0C0C0),
+                        ),
+                      const SizedBox(width: 4),
+                      Text(
+                        '$likesCount',
+                        style: const TextStyle(
+                          fontFamily: 'PingFang SC',
+                          color: Color(0xFFC0C0C0),
+                          fontSize: 14,
+                          height: 20 / 14,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 20),
+                Row(
+                  key: ValueKey<String>('discover.postCommentGroup.$index'),
+                  children: [
+                    SvgPicture.asset(
+                      'assets/images/discover/icon_comment_figma.svg',
+                      width: 16,
+                      height: 16,
+                      fit: BoxFit.fill,
+                    ),
                     const SizedBox(width: 4),
                     Text(
-                      '$likesCount',
+                      '$commentsCount',
                       style: const TextStyle(
                         fontFamily: 'PingFang SC',
                         color: Color(0xFFC0C0C0),
@@ -933,38 +879,24 @@ extension _DiscoverScreenUi on _DiscoverScreenState {
                     ),
                   ],
                 ),
-              ),
-            ),
-            Positioned(
-              left: 289,
-              top: 197,
-              height: 20,
-              child: Row(
-                key: ValueKey<String>('discover.postCommentGroup.$index'),
-                children: [
-                  SvgPicture.asset(
-                    'assets/images/discover/icon_comment_figma.svg',
-                    width: 16,
-                    height: 16,
-                    fit: BoxFit.fill,
-                  ),
-                  const SizedBox(width: 4),
-                  Text(
-                    '$commentsCount',
-                    style: const TextStyle(
-                      fontFamily: 'PingFang SC',
-                      color: Color(0xFFC0C0C0),
-                      fontSize: 14,
-                      height: 20 / 14,
-                    ),
-                  ),
-                ],
-              ),
+              ],
             ),
           ],
         ),
       ),
     );
+  }
+
+  void _openVideoFeed(BuildContext context, Post post) {
+    final videoPosts = AppRepository.instance.posts
+        .where((p) => (p.videoUrl ?? '').isNotEmpty)
+        .toList();
+    final idx = videoPosts.indexWhere((p) => p.id == post.id);
+    // 走 go_router 声明式（与裸 Navigator.push 混用会触发 keyReservation 崩溃）
+    context.push('/video_feed', extra: <String, dynamic>{
+      'posts': videoPosts.isEmpty ? <Post>[post] : videoPosts,
+      'initialIndex': idx < 0 ? 0 : idx,
+    });
   }
 
   Widget _buildImageRow(
@@ -986,9 +918,11 @@ extension _DiscoverScreenUi on _DiscoverScreenState {
                 child: i < showImages.length ||
                         (i == 0 && post.videoUrl != null)
                     ? GestureDetector(
-                        onTap: i < showImages.length
-                            ? () => showImagePreview(context, showImages[i])
-                            : null,
+                        onTap: (i == 0 && post.videoUrl != null)
+                            ? () => _openVideoFeed(context, post)
+                            : (i < showImages.length
+                                ? () => showImagePreview(context, showImages[i])
+                                : null),
                         child: ClipRRect(
                           borderRadius: BorderRadius.circular(5.72),
                           child: Stack(
@@ -1030,8 +964,6 @@ extension _DiscoverScreenUi on _DiscoverScreenState {
     return '${diff.inDays}天前';
   }
 }
-
-enum _PostAction { report, block }
 
 // ── 分类栏右侧通知入口（带红点）──────────────────────────────────
 class _DiscoverTabNotifyIcon extends StatelessWidget {

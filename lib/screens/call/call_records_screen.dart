@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../repositories/app_repository.dart';
+import '../../utils/permission_utils.dart';
 import '../../widgets/smart_avatar.dart';
 
 // ---------------------------------------------------------------------------
@@ -110,7 +111,12 @@ class _CallRecordsScreenState extends ConsumerState<CallRecordsScreen> {
                           userName: user.name,
                           avatarUrl: user.avatarUrl,
                           showDivider: true,
-                          onCallBack: () {
+                          onCallBack: () async {
+                            final granted = await ensureMicrophonePermission(
+                              context,
+                              usage: '进行视频通话',
+                            );
+                            if (!granted || !context.mounted) return;
                             context.push(
                               '/call/video/${record.userId}?state=outgoingB',
                             );

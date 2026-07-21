@@ -238,9 +238,9 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
                           const SizedBox(height: 12),
                           _buildSetupAgeField(),
                           const SizedBox(height: 18),
-                          _buildSectionLabel('性别'),
-                          const SizedBox(height: 12),
-                          _buildSetupGenderField(),
+                          // _buildSectionLabel('性别'),
+                          // const SizedBox(height: 12),
+                          // _buildSetupGenderField(),
                         ],
                       ),
                     ),
@@ -285,7 +285,7 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
                   const SizedBox(height: 32),
                   _buildListTile('昵称', _nicknameController.text, onTap: _showNicknameDialog),
                   _buildListTile('年龄', '${DateTime.now().year - _birthday.year}岁', onTap: _showDatePicker),
-                  _buildListTile('性别', _gender == 'male' ? '男' : '女'),
+                  // _buildListTile('性别', _gender == 'male' ? '男' : '女'),
                   const SizedBox(height: 24),
                   const Text('作品集', style: TextStyle(fontSize: 15, color: Color(0xFF222222), fontWeight: FontWeight.w500)),
                   const SizedBox(height: 12),
@@ -402,6 +402,7 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
     );
   }
 
+  // ignore: unused_element
   Widget _buildSetupGenderField() {
     return Column(
       children: [

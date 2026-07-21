@@ -22,6 +22,8 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
     final url = widget.videoUrl;
     if (url.startsWith('http://') || url.startsWith('https://')) {
       _controller = VideoPlayerController.networkUrl(Uri.parse(url));
+    } else if (url.startsWith('assets/')) {
+      _controller = VideoPlayerController.asset(url);
     } else {
       _controller = VideoPlayerController.file(File(url));
     }

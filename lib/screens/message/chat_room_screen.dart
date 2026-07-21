@@ -10,18 +10,24 @@ import 'package:image_picker/image_picker.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:record/record.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../core/router/user_profile_route.dart';
 import '../../models/message.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/blocked_users_provider.dart';
 import '../../providers/chat_provider.dart';
 import '../../providers/gift_provider.dart';
 import '../../repositories/app_repository.dart';
+import '../../utils/permission_utils.dart';
+import '../../utils/user_format.dart';
 import '../../widgets/interaction_utils.dart';
 import '../../widgets/smart_avatar.dart';
 import '../../widgets/smart_image.dart';
+import '../../widgets/user_stats_row.dart';
 import '../moment/video_player_screen.dart';
 import 'voice_record_interaction.dart';
+import 'voice_to_text_inline.dart';
 
 class ChatRoomScreen extends ConsumerStatefulWidget {
   final String otherUserId;
@@ -51,6 +57,7 @@ class _ChatRoomScreenState extends ConsumerState<ChatRoomScreen> {
   bool _isSimulatingReply = false;
   bool _showEmojiPanel = false;
   bool _voiceMode = false;
+  bool _voiceToTextActive = false;
   bool _isRecording = false;
   bool _voiceButtonPressed = false;
   bool _voiceGestureActive = false;
@@ -59,6 +66,8 @@ class _ChatRoomScreenState extends ConsumerState<ChatRoomScreen> {
   Offset? _cancelCircleCenter;
   Offset? _sendCircleCenter;
   String? _playingMessageId;
+  // 资料卡隐藏态（点 X 隐藏，持久化；卸载重装后 prefs 清空自然恢复显示）
+  bool _profileCardHidden = false;
   DateTime? _recordStartedAt;
 
   static const List<_EmojiOption> _emojiList = [
@@ -92,18 +101,37 @@ class _ChatRoomScreenState extends ConsumerState<ChatRoomScreen> {
 
   bool get _recordWillCancel => _voiceHoverTarget == VoiceHoverTarget.cancel;
 
+  String get _profileCardHiddenKey =>
+      'chat_profilecard_hidden_${widget.otherUserId}';
+
+  Future<void> _loadProfileCardHidden() async {
+    final prefs = await SharedPreferences.getInstance();
+    if (!mounted) return;
+    setState(() {
+      _profileCardHidden = prefs.getBool(_profileCardHiddenKey) ?? false;
+    });
+  }
+
+  Future<void> _hideProfileCard() async {
+    setState(() => _profileCardHidden = true);
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_profileCardHiddenKey, true);
+  }
+
   @override
   void initState() {
     super.initState();
+    _loadProfileCardHidden();
     _inputController.addListener(() {
       if (!mounted) return;
       setState(() {});
     });
     _inputFocusNode.addListener(() {
       if (!mounted) return;
-      if (_inputFocusNode.hasFocus && _showEmojiPanel) {
+      if (_inputFocusNode.hasFocus && (_showEmojiPanel || _voiceToTextActive)) {
         setState(() {
           _showEmojiPanel = false;
+          _voiceToTextActive = false;
         });
       }
     });
@@ -157,6 +185,7 @@ class _ChatRoomScreenState extends ConsumerState<ChatRoomScreen> {
   void _toggleEmojiPanel() {
     setState(() {
       _voiceMode = false;
+      _voiceToTextActive = false;
       _showEmojiPanel = !_showEmojiPanel;
     });
     if (_showEmojiPanel) {
@@ -172,6 +201,7 @@ class _ChatRoomScreenState extends ConsumerState<ChatRoomScreen> {
     setState(() {
       _voiceMode = !_voiceMode;
       _showEmojiPanel = false;
+      _voiceToTextActive = false;
     });
   }
 
@@ -361,37 +391,29 @@ class _ChatRoomScreenState extends ConsumerState<ChatRoomScreen> {
     );
     if (!mounted || result == null) return;
     if (result == 'video') {
+      final granted =
+          await ensureMicrophonePermission(context, usage: '进行视频通话');
+      if (!granted || !mounted) return;
       context.push('/call/video/${widget.otherUserId}?state=outgoingB');
     } else if (result == 'voice') {
+      final granted =
+          await ensureMicrophonePermission(context, usage: '进行语音通话');
+      if (!granted || !mounted) return;
       context.push('/call/voice/${widget.otherUserId}?callState=outgoing');
     }
   }
 
-  Future<void> _handleMoreAction(_ChatMoreAction action) async {
-    if (action == _ChatMoreAction.report) {
-      showAppToast(context, '举报成功，感谢您对平台的支持');
-      return;
-    }
-    final confirmed = await showBlockConfirmDialog(context);
-    if (!mounted || confirmed != true) return;
-    ref.read(blockedUsersProvider.notifier).blockUser(widget.otherUserId);
-    _refreshChatProviders();
-    showAppToast(context, '拉黑成功');
-  }
-
   Future<void> _startRecording() async {
     if (_isRecording || !_voiceGestureActive) return;
-    final microphonePermission = await Permission.microphone.request();
-    if (!microphonePermission.isGranted) {
+    if (!mounted) return;
+    final granted =
+        await ensureMicrophonePermission(context, usage: '发送语音消息');
+    if (!granted) {
       _voiceGestureActive = false;
       if (!mounted) return;
       setState(() {
         _voiceButtonPressed = false;
       });
-      showAppToast(context, '请先允许麦克风权限');
-      if (microphonePermission.isPermanentlyDenied) {
-        await openAppSettings();
-      }
       return;
     }
     if (!_voiceGestureActive) return;
@@ -621,8 +643,26 @@ class _ChatRoomScreenState extends ConsumerState<ChatRoomScreen> {
       }
     } catch (_) {
       if (!mounted) return;
-      showAppToast(context, '保存失败，请检查系统相册权限');
-      await openAppSettings();
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('相册权限'),
+          content: const Text('保存失败，请检查并允许系统相册权限。'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('取消'),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                openAppSettings();
+              },
+              child: const Text('去设置'),
+            ),
+          ],
+        ),
+      );
     }
   }
 
@@ -763,7 +803,7 @@ class _ChatRoomScreenState extends ConsumerState<ChatRoomScreen> {
         : otherUser.name;
 
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: const Color(0xFFF7F7F7),
       appBar: AppBar(
         toolbarHeight: 56,
         leadingWidth: 48,
@@ -823,45 +863,18 @@ class _ChatRoomScreenState extends ConsumerState<ChatRoomScreen> {
           ),
         ),
         centerTitle: true,
-        backgroundColor: Colors.white,
+        backgroundColor: const Color(0xFFF7F7F7),
         elevation: 0,
         scrolledUnderElevation: 0,
-        surfaceTintColor: Colors.white,
+        surfaceTintColor: const Color(0xFFF7F7F7),
         actions: isOfficialSupport
             ? const []
             : [
-                PopupMenuButton<_ChatMoreAction>(
-                  key: const ValueKey<String>('chat.moreMenuButton'),
-                  padding: EdgeInsets.zero,
-                  constraints: const BoxConstraints.tightFor(
-                    width: 48,
-                    height: 56,
-                  ),
-                  color: const Color(0xFF4A4A4A),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  onSelected: _handleMoreAction,
-                  itemBuilder: (_) => const [
-                    PopupMenuItem<_ChatMoreAction>(
-                      value: _ChatMoreAction.report,
-                      child: Center(
-                        child: Text(
-                          '举报',
-                          style: TextStyle(color: Colors.white, fontSize: 16),
-                        ),
-                      ),
-                    ),
-                    PopupMenuItem<_ChatMoreAction>(
-                      value: _ChatMoreAction.block,
-                      child: Center(
-                        child: Text(
-                          '拉黑',
-                          style: TextStyle(color: Colors.white, fontSize: 16),
-                        ),
-                      ),
-                    ),
-                  ],
+                GestureDetector(
+                  key: const ValueKey<String>('chat.settingsButton'),
+                  behavior: HitTestBehavior.opaque,
+                  onTap: () =>
+                      context.push('/chat_settings/${widget.otherUserId}'),
                   child: const SizedBox(
                     width: 48,
                     height: 56,
@@ -911,9 +924,10 @@ class _ChatRoomScreenState extends ConsumerState<ChatRoomScreen> {
                           controller: _scrollController,
                           padding: const EdgeInsets.fromLTRB(14, 3, 14, 22),
                           children: [
-                            isOfficialSupport
-                                ? _buildServiceCard()
-                                : _buildGalleryCard(otherUser),
+                            if (isOfficialSupport)
+                              _buildServiceCard()
+                            else if (!_profileCardHidden)
+                              _buildGalleryCard(otherUser),
                             if (messages.isNotEmpty) const SizedBox(height: 14),
                             ...messages.map((message) {
                               final isMe = currentUser != null &&
@@ -1026,67 +1040,158 @@ class _ChatRoomScreenState extends ConsumerState<ChatRoomScreen> {
   }
 
   Widget _buildGalleryCard(otherUser) {
+    // 第四次迭代 4.1：资料卡 = 头像/昵称/年龄/国籍/关注/个签/摄影作品（默认3图），点 X 隐藏
     final images = otherUser.portfolioImages.take(3).toList();
+    final currentUser = ref.read(authProvider);
+    final following = currentUser != null &&
+        AppRepository.instance.isFollowing(currentUser.id, otherUser.id);
 
-    return SizedBox(
+    return Container(
       key: const ValueKey<String>('chat.galleryCard'),
-      width: 347,
-      height: 158,
-      child: DecoratedBox(
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(18),
-        ),
-        child: Stack(
-          children: [
-            const Positioned(
-              left: 14,
-              top: 14,
-              width: 56,
-              height: 20,
-              child: Text(
-                '摄影作品',
-                style: TextStyle(
-                  fontFamily: 'PingFang SC',
-                  fontWeight: FontWeight.w700,
-                  fontSize: 14,
-                  color: Color(0xFF333333),
-                  height: 20 / 14,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(18),
+      ),
+      padding: const EdgeInsets.fromLTRB(14, 14, 12, 14),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // ── 身份行：头像 + 昵称/年龄/国籍 + 关注 + X ──
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              GestureDetector(
+                onTap: () => openUserProfile(context, otherUser.id),
+                child: SmartAvatar(
+                  radius: 24,
+                  source: otherUser.avatarUrl,
+                  fallbackName: otherUser.name,
                 ),
               ),
-            ),
-            if (images.isEmpty)
-              const Positioned(
-                left: 14,
-                top: 44,
-                child: Text(
-                  '暂无作品',
-                  style: TextStyle(color: Color(0xFF999999), fontSize: 12),
-                ),
-              )
-            else
-              for (var index = 0; index < images.length; index++)
-                Positioned(
-                  left: 14 + index * 109,
-                  top: 40,
-                  width: 102,
-                  height: 104,
-                  child: GestureDetector(
-                    onTap: () => showImagePreview(context, images[index]),
-                    child: SizedBox(
-                      key: ValueKey<String>('chat.galleryImage.$index'),
-                      width: 102,
-                      height: 104,
-                      child: SmartImage(
-                        source: images[index],
-                        fit: BoxFit.cover,
-                        borderRadius: BorderRadius.circular(6),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      otherUser.name,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontFamily: 'PingFang SC',
+                        fontWeight: FontWeight.w600,
+                        fontSize: 15,
+                        color: Color(0xFF333333),
                       ),
+                    ),
+                    const SizedBox(height: 4),
+                    UserStatsRow(
+                      gender: otherUser.gender,
+                      age: ageFromBirthday(otherUser.birthday),
+                      nationality: otherUser.nationality,
+                    ),
+                  ],
+                ),
+              ),
+              // 关注 icon
+              GestureDetector(
+                key: const ValueKey<String>('chat.profileCard.follow'),
+                onTap: currentUser == null
+                    ? null
+                    : () {
+                        AppRepository.instance.setFollowing(
+                          currentUser.id,
+                          otherUser.id,
+                          following: !following,
+                        );
+                        setState(() {});
+                      },
+                child: Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+                  decoration: BoxDecoration(
+                    color: following
+                        ? const Color(0xFFF0F0F0)
+                        : const Color(0xFF8B5CF6),
+                    borderRadius: BorderRadius.circular(999),
+                  ),
+                  child: Text(
+                    following ? '已关注' : '关注',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: following
+                          ? const Color(0xFF999999)
+                          : Colors.white,
                     ),
                   ),
                 ),
+              ),
+              const SizedBox(width: 8),
+              GestureDetector(
+                key: const ValueKey<String>('chat.profileCard.close'),
+                onTap: _hideProfileCard,
+                behavior: HitTestBehavior.opaque,
+                child: const Padding(
+                  padding: EdgeInsets.all(2),
+                  child: Icon(Icons.close, size: 18, color: Color(0xFF999999)),
+                ),
+              ),
+            ],
+          ),
+          // ── 个签 ──
+          if ((otherUser.bio as String).trim().isNotEmpty) ...[
+            const SizedBox(height: 10),
+            Text(
+              otherUser.bio,
+              style: const TextStyle(
+                fontSize: 13,
+                color: Color(0xFF666666),
+                height: 1.4,
+              ),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
           ],
-        ),
+          // ── 摄影作品（默认 3 图）──
+          const SizedBox(height: 12),
+          const Text(
+            '摄影作品',
+            style: TextStyle(
+              fontFamily: 'PingFang SC',
+              fontWeight: FontWeight.w700,
+              fontSize: 14,
+              color: Color(0xFF333333),
+            ),
+          ),
+          const SizedBox(height: 8),
+          if (images.isEmpty)
+            const Text('暂无作品',
+                style: TextStyle(color: Color(0xFF999999), fontSize: 12))
+          else
+            Row(
+              children: [
+                for (var index = 0; index < 3; index++) ...[
+                  if (index > 0) const SizedBox(width: 7),
+                  Expanded(
+                    child: index < images.length
+                        ? GestureDetector(
+                            onTap: () => showImagePreview(context, images[index]),
+                            child: AspectRatio(
+                              aspectRatio: 1,
+                              child: SmartImage(
+                                key: ValueKey<String>('chat.galleryImage.$index'),
+                                source: images[index],
+                                fit: BoxFit.cover,
+                                borderRadius: BorderRadius.circular(6),
+                              ),
+                            ),
+                          )
+                        : const SizedBox.shrink(),
+                  ),
+                ],
+              ],
+            ),
+        ],
       ),
     );
   }
@@ -1337,83 +1442,155 @@ class _ChatRoomScreenState extends ConsumerState<ChatRoomScreen> {
 
   Widget _buildMessageInput() {
     final sendActive = _canSend;
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        SizedBox(
-          key: const ValueKey<String>('chat.inputBar'),
-          width: double.infinity,
-          height: 84,
-          child: DecoratedBox(
-            decoration: const BoxDecoration(
-              color: Colors.white,
-              border: Border(
-                top: BorderSide(color: Color(0xFFF3F3F5), width: 0.5),
-              ),
-            ),
-            child: Stack(
-              children: [
-                Positioned(
-                  left: 14,
-                  top: 10,
-                  width: 292,
-                  height: 40,
-                  child:
-                      _voiceMode ? _buildVoiceHoldButton() : _buildTextInput(),
+    return Container(
+      color: Colors.white,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          SizedBox(
+            key: const ValueKey<String>('chat.inputBar'),
+            width: double.infinity,
+            // Figma v4：语音转文字内联展开时输入栏增高，承载波形 + 说完了胶囊。
+            height: _voiceToTextActive ? 178 : 84,
+            child: DecoratedBox(
+              decoration: const BoxDecoration(
+                color: Colors.white,
+                border: Border(
+                  top: BorderSide(color: Color(0xFFF3F3F5), width: 0.5),
                 ),
-                Positioned(
-                  left: 322.56,
-                  top: 10,
-                  width: 38,
-                  height: 38,
-                  child: GestureDetector(
-                    onTap: sendActive ? _sendTextMessage : null,
-                    child: Opacity(
-                      opacity: sendActive ? 1.0 : 0.5,
-                      child: Image.asset(
-                        'assets/icons/chat/send.png',
-                        width: 38,
-                        height: 38,
+              ),
+              child: Stack(
+                children: [
+                  if (_voiceToTextActive)
+                    Positioned(
+                      left: 0,
+                      right: 0,
+                      top: 92,
+                      child: InlineVoiceToText(onDone: _applyVoiceToText),
+                    ),
+                  Positioned(
+                    left: 14,
+                    top: 10,
+                    width: 292,
+                    height: 40,
+                    child:
+                        _voiceMode ? _buildVoiceHoldButton() : _buildTextInput(),
+                  ),
+                  Positioned(
+                    left: 322.56,
+                    top: 10,
+                    width: 38,
+                    height: 38,
+                    child: GestureDetector(
+                      onTap: sendActive ? _sendTextMessage : null,
+                      child: Opacity(
+                        opacity: sendActive ? 1.0 : 0.5,
+                        child: Image.asset(
+                          'assets/icons/chat/send.png',
+                          width: 38,
+                          height: 38,
+                        ),
                       ),
                     ),
                   ),
-                ),
-                Positioned(
-                  left: 26.25,
-                  top: 54,
-                  child: _buildInputIconButton(
-                    'assets/icons/chat/emoji.png',
-                    _toggleEmojiPanel,
+                  Positioned(
+                    left: 26.25,
+                    top: 54,
+                    child: _buildInputIconButton(
+                      'assets/icons/chat/emoji.png',
+                      _toggleEmojiPanel,
+                    ),
                   ),
-                ),
-                Positioned(
-                  left: 77.25,
-                  top: 54,
-                  child: _buildInputIconButton(
-                    'assets/icons/chat/image.png',
-                    _pickAndSendImage,
+                  Positioned(
+                    left: 77.25,
+                    top: 54,
+                    child: _buildInputIconButton(
+                      'assets/icons/chat/image.png',
+                      _pickAndSendImage,
+                    ),
                   ),
-                ),
-                Positioned(
-                  left: 128.25,
-                  top: 54,
-                  child: _buildInputIconButton(
-                    'assets/icons/chat/video.png',
-                    _pickAndSendVideo,
+                  Positioned(
+                    left: 128.25,
+                    top: 54,
+                    child: _buildInputIconButton(
+                      'assets/icons/chat/video.png',
+                      _pickAndSendVideo,
+                    ),
                   ),
-                ),
-                Positioned(
-                  left: 179.25,
-                  top: 54,
-                  child: _buildMoreIconButton(),
-                ),
-              ],
+                  Positioned(
+                    left: 179.25,
+                    top: 54,
+                    child: _buildMoreIconButton(),
+                  ),
+                  // 语音转文字
+                  Positioned(
+                    left: 230.25,
+                    top: 54,
+                    child: GestureDetector(
+                      key: const ValueKey<String>('chat.voiceToText'),
+                      onTap: _toggleVoiceToText,
+                      child: Container(
+                        width: 29,
+                        height: 29,
+                        decoration: BoxDecoration(
+                          color: _voiceToTextActive
+                              ? const Color(0xFFEDE7FB)
+                              : const Color(0xFFF3F3F5),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        padding: const EdgeInsets.all(5),
+                        child: Image.asset(
+                          'assets/icons/chat/voice_to_text.png',
+                          color: _voiceToTextActive
+                              ? const Color(0xFF8B73D4)
+                              : null,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
-        ),
-        SizedBox(height: MediaQuery.of(context).padding.bottom),
-      ],
+          SizedBox(height: MediaQuery.of(context).padding.bottom),
+        ],
+      ),
     );
+  }
+
+  /// 语音转文字（Figma v4 内联态）：点图标在输入区就地展开录音波形，
+  /// 不再弹全屏模态。再次点击或【说完了】收起。
+  Future<void> _toggleVoiceToText() async {
+    // 收起不需要权限，只有展开（开始录音）前才请求。
+    if (!_voiceToTextActive) {
+      final granted =
+          await ensureMicrophonePermission(context, usage: '使用语音转文字');
+      if (!granted || !mounted) return;
+    }
+    _inputFocusNode.unfocus();
+    setState(() {
+      _voiceToTextActive = !_voiceToTextActive;
+      if (_voiceToTextActive) {
+        _voiceMode = false;
+        _showEmojiPanel = false;
+      }
+    });
+  }
+
+  /// 内联【说完了】：转写文本填入输入框并收起波形。
+  void _applyVoiceToText(String text) {
+    if (text.isEmpty) {
+      setState(() => _voiceToTextActive = false);
+      return;
+    }
+    final base = _inputController.text;
+    final merged = base.isEmpty ? text : '$base$text';
+    _inputController.value = _inputController.value.copyWith(
+      text: merged,
+      selection: TextSelection.collapsed(offset: merged.length),
+    );
+    setState(() => _voiceToTextActive = false);
+    _inputFocusNode.requestFocus();
   }
 
   Widget _buildInputIconButton(String asset, VoidCallback onTap) {
@@ -1527,11 +1704,8 @@ class _ChatRoomScreenState extends ConsumerState<ChatRoomScreen> {
           color: const Color(0xFFF3F3F3),
           borderRadius: BorderRadius.circular(8),
         ),
-        child: const Icon(
-          Icons.add,
-          size: 20,
-          color: Color(0xFF8D9298),
-        ),
+        padding: const EdgeInsets.all(5),
+        child: Image.asset('assets/icons/chat/call.png'),
       ),
     );
   }
@@ -1741,7 +1915,6 @@ class _MessageAction {
   final String label;
 }
 
-enum _ChatMoreAction { report, block }
 
 enum _MessageActionType { copy, delete, recall, save, retry }
 
@@ -1925,11 +2098,11 @@ class _MenuPointerPainter extends CustomPainter {
   }
 }
 
-/// 08节点：视频通话/语音通话弹出 action sheet
-/// Figma 249:11513 — 白色底部 sheet，高约 181px，顶部圆角约 14px
-/// 行高：约 60px，字号 18px PingFang SC，颜色 #333
-/// 分割线：1px，颜色约 #E5E5E5
-/// 视频通话图标 24px，语音通话图标 24px（预留待确认 Material icon 近似）
+/// 视频通话/语音通话弹出 action sheet
+/// 白色底部 sheet，高约 181px，顶部圆角约 14px；行高约 60px，字号 18px，颜色 #333
+/// 通话图标：已对 Figma v4（DKdDF6J2p89t2DFwvCgvjh）核对——v4 通话图标为细线
+/// 电话听筒(node 37:12588)+ 相机，与下方 Material phone_outlined/videocam_outlined
+/// 线性风格一致；v4 未提供独立的通话 action sheet 重设计，沿用本线性图标。
 class _CallActionSheet extends StatelessWidget {
   const _CallActionSheet();
 
@@ -1949,7 +2122,7 @@ class _CallActionSheet extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             const _CallActionItem(
-              icon: Icons.videocam_outlined, // 预留待确认：与 Figma icon 近似
+              icon: Icons.videocam_outlined, // v4 线性相机风格
               label: '视频通话',
               result: 'video',
             ),
@@ -1960,7 +2133,7 @@ class _CallActionSheet extends StatelessWidget {
               color: Color(0xFFE8E8E8),
             ),
             const _CallActionItem(
-              icon: Icons.phone_outlined, // 预留待确认：与 Figma icon 近似
+              icon: Icons.phone_outlined, // v4 细线电话听筒风格(对 node 37:12588)
               label: '语音通话',
               result: 'voice',
             ),

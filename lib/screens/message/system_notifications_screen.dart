@@ -295,11 +295,12 @@ class _InteractionTabBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // PDF 3.4：标题等间距分布（中心 94px 等距），【被回复】不贴页面边缘
     return SizedBox(
       height: 22,
       child: Stack(
         children: List.generate(_kTabs.length, (i) {
-          const centerXs = [38.0, 140.0, 242.0, 336.0];
+          const centerXs = [47.0, 141.0, 235.0, 329.0];
           const widths = [56.0, 72.0, 56.0, 56.0];
           final isSelected = i == selectedIndex;
           return Positioned(

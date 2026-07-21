@@ -10,8 +10,11 @@ import '../../providers/auth_provider.dart';
 import '../../providers/profile_provider.dart';
 import '../../repositories/app_repository.dart';
 import '../../widgets/interaction_utils.dart';
+import '../../utils/user_format.dart';
 import '../../widgets/smart_avatar.dart';
 import '../../widgets/smart_image.dart';
+import '../../widgets/translatable_text.dart';
+import '../../widgets/user_stats_row.dart';
 
 class UserProfileScreen extends ConsumerStatefulWidget {
   const UserProfileScreen({super.key, required this.userId});
@@ -325,7 +328,7 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
                         ),
                       ),
                       child: Padding(
-                        padding: const EdgeInsets.fromLTRB(14, 26, 14, 20),
+                        padding: const EdgeInsets.fromLTRB(14, 34, 14, 20),
                         child: Column(
                           children: [
                             _ProfileIdentityRow(user: user),
@@ -333,6 +336,7 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
                             _ProfileInsightCard(
                               key: const ValueKey('userProfile.insightCard'),
                               bio: user.bio,
+                              bioOriginal: user.bioOriginal,
                             ),
                             const SizedBox(height: 10),
                             _RecentPostsCard(
@@ -514,26 +518,61 @@ class _ProfileIdentityRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Row(
+    final age = ageFromBirthday(user.birthday);
+    final hasStats = // user.gender.isNotEmpty ||
+        user.birthday != null ||
+        (user.heightCm != null && user.heightCm! > 0) ||
+        (user.weightKg != null && user.weightKg! > 0) ||
+        (user.nationality != null && user.nationality!.trim().isNotEmpty) ||
+        (user.displayId != null && user.displayId!.trim().isNotEmpty);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        SmartAvatar(
-          radius: 17.5,
-          source: user.avatarUrl,
-          fallbackName: user.name,
-        ),
-        const SizedBox(width: 9),
-        Expanded(
-          child: Text(
-            user.name,
-            style: const TextStyle(
-              color: Color(0xFF333333),
-              fontSize: 16,
-              fontWeight: FontWeight.w500,
+        Row(
+          children: [
+            SmartAvatar(
+              radius: 17.5,
+              source: user.avatarUrl,
+              fallbackName: user.name,
             ),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
+            const SizedBox(width: 9),
+            Expanded(
+              child: Text(
+                user.name,
+                style: const TextStyle(
+                  color: Color(0xFF333333),
+                  fontSize: 16,
+                  fontWeight: FontWeight.w500,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+          ],
         ),
+        if (hasStats) ...[
+          const SizedBox(height: 8),
+          Padding(
+            padding: const EdgeInsets.only(left: 6),
+            child: UserStatsRow(
+              gender: user.gender,
+              age: age,
+              heightCm: user.heightCm,
+              weightKg: user.weightKg,
+              nationality: user.nationality,
+              displayId: user.displayId,
+              textStyle: const TextStyle(
+                fontFamily: 'PingFang SC',
+                fontSize: 12,
+                color: Color(0xFF333333),
+              ),
+              iconSize: 12,
+              spacing: 16,
+              runSpacing: 4,
+            ),
+          ),
+        ],
       ],
     );
   }
@@ -543,9 +582,11 @@ class _ProfileInsightCard extends StatelessWidget {
   const _ProfileInsightCard({
     super.key,
     required this.bio,
+    this.bioOriginal = '',
   });
 
   final String bio;
+  final String bioOriginal;
 
   @override
   Widget build(BuildContext context) {
@@ -593,15 +634,15 @@ class _ProfileInsightCard extends StatelessWidget {
           ),
           const SizedBox(height: 2),
           Expanded(
-            child: Text(
-              content,
+            child: TranslatableText(
+              translated: content,
+              original: bioOriginal,
               style: const TextStyle(
                 color: Color(0xFF999999),
                 fontSize: 12,
                 height: 1.4,
               ),
               maxLines: 2,
-              overflow: TextOverflow.ellipsis,
             ),
           ),
         ],

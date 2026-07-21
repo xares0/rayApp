@@ -20,10 +20,16 @@ void openUserProfile(
   String userId, {
   String? currentUserId,
 }) {
-  context.push(
-    resolveUserProfileRoute(
-      userId: userId,
-      currentUserId: currentUserId,
-    ),
+  final route = resolveUserProfileRoute(
+    userId: userId,
+    currentUserId: currentUserId,
   );
+  // 自己 → '/profile' 是 ShellRoute 分支。用 push 压入 shell 分支会重复挂载
+  // MainSkeleton，触发 Navigator keyReservation 断言崩溃（尤其从全屏视频等
+  // shell 外的路由进入时）。故自己走 go（切 Tab，声明式重建），别人走 push。
+  if (route == '/profile') {
+    context.go(route);
+  } else {
+    context.push(route);
+  }
 }

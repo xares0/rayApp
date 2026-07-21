@@ -13,7 +13,7 @@ import '../models/user.dart';
 class AppRepository {
   static final AppRepository instance = AppRepository._internal();
   static const String officialSupportUserId = 'u_cs';
-  static const String systemWelcomeMessage = '欢迎来到photomate，开启摄影分享新体验！';
+  static const String systemWelcomeMessage = '欢迎来到越她 photomate，开启摄影分享社交新体验';
 
   AppRepository._internal() {
     _initData();
@@ -66,12 +66,18 @@ class AppRepository {
         ],
         gender: 'male',
         birthday: '1998-04-12',
+        nationality: '中国',
+        isOnline: true,
+        heightCm: 178,
+        weightKg: 68,
+        displayId: '1000012',
       ),
       const User(
         id: 'u2',
         name: 'Alice Wonders',
         avatarUrl: 'assets/images/avatars/female/female_01.jpg',
         bio: '胶片玩家，周末探店拍摄',
+        bioOriginal: 'Người chơi phim, cuối tuần đi chụp dạo quán.',
         portfolioImages: [
           'assets/images/posts/desert_sunset_1.jpg',
           'assets/images/posts/desert_sunset_2.jpg',
@@ -80,6 +86,11 @@ class AppRepository {
         remarkName: 'Alice老师',
         gender: 'female',
         birthday: '1999-09-20',
+        nationality: '越南',
+        isOnline: true,
+        heightCm: 165,
+        weightKg: 50,
+        displayId: '1123456',
       ),
       const User(
         id: 'u3',
@@ -89,15 +100,21 @@ class AppRepository {
         portfolioImages: [
           'assets/images/posts/morning_valley.jpg',
           'assets/images/posts/building_facade.jpg',
+          'assets/images/posts/prairie_walk.jpg',
         ],
         gender: 'male',
         birthday: '1995-01-18',
+        nationality: '中国',
+        heightCm: 182,
+        weightKg: 75,
+        displayId: '1000018',
       ),
       const User(
         id: 'u4',
         name: '棠也',
         avatarUrl: 'assets/images/avatars/female/female_04.jpg',
         bio: '社牛属性拉满！刷到就是缘分',
+        bioOriginal: 'Tính cách hướng ngoại đầy mình! Lướt thấy là có duyên rồi~',
         portfolioImages: [
           'assets/images/posts/city_flash_1.jpg',
           'assets/images/posts/city_flash_2.jpg',
@@ -105,6 +122,11 @@ class AppRepository {
         ],
         gender: 'female',
         birthday: '2001-04-10',
+        nationality: '越南',
+        isOnline: true,
+        heightCm: 168,
+        weightKg: 52,
+        displayId: '1123410',
       ),
       const User(
         id: 'u5',
@@ -122,6 +144,7 @@ class AppRepository {
         name: 'Eva Stories',
         avatarUrl: 'assets/images/avatars/female/female_03.jpg',
         bio: '旅行博主，记录城市温度',
+        bioOriginal: 'Blogger du lịch, ghi lại hơi ấm của thành phố.',
         portfolioImages: [
           'assets/images/posts/city_flash_1.jpg',
           'assets/images/posts/city_flash_2.jpg',
@@ -129,6 +152,10 @@ class AppRepository {
         ],
         gender: 'female',
         birthday: '2000-03-11',
+        nationality: '泰国',
+        heightCm: 170,
+        weightKg: 54,
+        displayId: '1123411',
       ),
       const User(
         id: 'u7',
@@ -146,12 +173,18 @@ class AppRepository {
         name: 'Grace Film',
         avatarUrl: 'assets/images/avatars/female/female_04.jpg',
         bio: '日常胶片与暗房冲洗',
+        bioOriginal: 'Phim ảnh thường ngày và tráng rọi phòng tối.',
         portfolioImages: [
           'assets/images/posts/film_roll.webp',
           'assets/images/posts/desert_sunset_2.jpg',
         ],
         gender: 'female',
         birthday: '2001-12-03',
+        nationality: '越南',
+        isOnline: true,
+        heightCm: 162,
+        weightKg: 48,
+        displayId: '1123403',
       ),
       const User(
         id: 'u9',
@@ -222,14 +255,19 @@ class AppRepository {
     };
 
     posts.addAll([
+      // p1/p2 为首页推荐流的 vv2 设计稿示例卡，内容需与 Figma 一致；
+      // 列表与详情共用这份数据，不再由 UI 层注入示例值。
       Post(
         id: 'p1',
-        userId: 'u1',
+        userId: 'u4',
         images: [
           'assets/images/posts/old_street_1.jpg',
           'assets/images/posts/old_street_2.jpg',
+          'assets/images/posts/building_facade.jpg',
         ],
-        content: '老街下午的光影太漂亮了，今天快门按到停不下来。',
+        content: '探索未知，感受自然之美。',
+        contentOriginal:
+            'Khám phá những điều chưa biết, cảm nhận vẻ đẹp của thiên nhiên.',
         likesCount: 358,
         commentsCount: 122,
         isLiked: true,
@@ -238,12 +276,15 @@ class AppRepository {
       ),
       Post(
         id: 'p2',
-        userId: 'u2',
+        userId: 'u4',
         images: [
-          'assets/images/posts/desert_sunset_1.jpg',
-          'assets/images/posts/desert_sunset_2.jpg',
+          'assets/images/posts/building_facade.jpg',
+          'assets/images/posts/old_street_1.jpg',
+          'assets/images/posts/old_street_2.jpg',
         ],
-        content: '沙漠的风很大，但夕阳真值得。',
+        content: '探索未知，感受自然之美。',
+        contentOriginal:
+            'Khám phá những điều chưa biết, cảm nhận vẻ đẹp của thiên nhiên.',
         likesCount: 358,
         commentsCount: 122,
         isLiked: true,
@@ -256,7 +297,9 @@ class AppRepository {
         images: const [
           'assets/images/posts/morning_valley.jpg',
         ],
-        content: '清晨六点的山谷，雾刚好。',
+        content: '清晨六点的山谷，雾刚好，光线从山脊后面缓缓铺开，整片树林都泛着金色，这种安静的瞬间真的值得早起，等了很久终于拍到了想要的画面。',
+        contentOriginal:
+            'Thung lũng lúc sáu giờ sáng, sương mù vừa đẹp, ánh sáng từ từ trải ra sau sống núi.',
         likesCount: 1200,
         commentsCount: 45,
         isLiked: false,
@@ -270,6 +313,7 @@ class AppRepository {
           'assets/images/posts/building_facade.jpg',
         ],
         content: '新的建筑项目交付，赶在天黑前拍完外立面。',
+        contentOriginal: 'Dự án kiến trúc mới bàn giao, chụp xong mặt tiền trước khi trời tối.',
         likesCount: 212,
         commentsCount: 15,
         isLiked: false,
@@ -283,6 +327,8 @@ class AppRepository {
           'assets/images/posts/lens_35mm.webp',
         ],
         content: '35mm 和 50mm 对比样片，晚上发参数。',
+        contentOriginal:
+            'Ảnh mẫu so sánh 35mm và 50mm, tối nay sẽ đăng thông số.',
         likesCount: 56,
         commentsCount: 3,
         isLiked: false,
@@ -298,6 +344,8 @@ class AppRepository {
           'assets/images/posts/city_flash_3.jpg',
         ],
         content: '三城一日快闪，真的全靠咖啡续命。',
+        contentOriginal:
+            'Chuyến đi chớp nhoáng 3 thành phố trong một ngày, thực sự chỉ biết dựa vào cà phê để duy trì sự sống.',
         likesCount: 421,
         commentsCount: 29,
         isLiked: true,
@@ -310,7 +358,11 @@ class AppRepository {
         images: const [
           'assets/images/posts/city_night.jpg',
         ],
-        content: '城市夜景延时导出中，先放一张封面。',
+        content: '城市夜景延时导出中，先放一张封面，整晚守在天台就为了这一段流动的车灯。',
+        contentOriginal:
+            'Đang xuất timelapse cảnh đêm thành phố, đăng trước một tấm bìa.',
+        videoUrl:
+            'https://flutter.github.io/assets-for-api-docs/assets/videos/bee.mp4',
         likesCount: 137,
         commentsCount: 9,
         isLiked: false,
@@ -324,6 +376,8 @@ class AppRepository {
           'assets/images/posts/film_roll.webp',
         ],
         content: '今天冲洗了两卷胶片，颗粒感太喜欢了。',
+        contentOriginal:
+            'Hôm nay đã tráng hai cuộn phim, rất thích độ nhiễu hạt.',
         likesCount: 260,
         commentsCount: 17,
         isLiked: false,
@@ -337,10 +391,30 @@ class AppRepository {
           'assets/images/posts/rain_street.jpg',
         ],
         content: '雨后路面反光，拍街景真的加分。',
+        contentOriginal:
+            'Mặt đường phản chiếu sau cơn mưa, chụp cảnh đường phố thực sự rất đẹp.',
+        videoUrl:
+            'https://flutter.github.io/assets-for-api-docs/assets/videos/butterfly.mp4',
         likesCount: 98,
         commentsCount: 5,
         isLiked: false,
         createdAt: now.subtract(const Duration(days: 2, hours: 4)),
+        category: '风景',
+      ),
+      Post(
+        id: 'p10',
+        userId: 'u3',
+        images: const [
+          'assets/images/posts/prairie_walk.jpg',
+        ],
+        content: '沿着草原小路慢慢走，蓝天绿草，风都很温柔🌤️',
+        contentOriginal:
+            'Đi dạo thong thả trên con đường thảo nguyên, trời xanh cỏ xanh, gió thật dịu dàng 🌤️',
+        videoUrl: 'assets/images/posts/18be3e5a741d7a3c9b50160a8382e2d0.mp4',
+        likesCount: 520,
+        commentsCount: 36,
+        isLiked: false,
+        createdAt: now.subtract(const Duration(hours: 1)),
         category: '风景',
       ),
     ]);
@@ -751,6 +825,26 @@ class AppRepository {
     final hiddenIds =
         _hiddenConversationUserIds.putIfAbsent(userId, () => <String>{});
     hiddenIds.add(otherUserId);
+  }
+
+  /// 设置聊天对象备注（更新 User.remarkName；空字符串=清除备注）。
+  void setRemarkName(String userId, String remark) {
+    final i = users.indexWhere((u) => u.id == userId);
+    if (i == -1) return;
+    final trimmed = remark.trim();
+    users[i] = users[i].copyWith(
+      remarkName: trimmed.isEmpty ? null : trimmed,
+    );
+  }
+
+  /// 清除与某对象的聊天记录（双向移除消息）。
+  void clearConversationMessages({
+    required String userId,
+    required String otherUserId,
+  }) {
+    messages.removeWhere((m) =>
+        (m.senderId == userId && m.receiverId == otherUserId) ||
+        (m.senderId == otherUserId && m.receiverId == userId));
   }
 
   void clearConversationList(String userId) {

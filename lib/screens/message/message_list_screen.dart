@@ -177,7 +177,8 @@ class _MessageListScreenState extends ConsumerState<MessageListScreen> {
                           height: 32,
                           child: Row(
                             children: [
-                              const SizedBox(width: 32),
+                              // 左侧占位（与右侧搜索 + 管理两个图标等宽），保持标题居中。
+                              const SizedBox(width: 64),
                               const Expanded(
                                 child: Center(
                                   child: Text(
@@ -187,6 +188,26 @@ class _MessageListScreenState extends ConsumerState<MessageListScreen> {
                                       fontSize: 18,
                                       fontWeight: FontWeight.w500,
                                     ),
+                                  ),
+                                ),
+                              ),
+                              SizedBox(
+                                width: 32,
+                                height: 32,
+                                child: IconButton(
+                                  key: const ValueKey<String>(
+                                      'message_search_button'),
+                                  padding: EdgeInsets.zero,
+                                  constraints: const BoxConstraints.tightFor(
+                                    width: 32,
+                                    height: 32,
+                                  ),
+                                  splashRadius: 18,
+                                  onPressed: () => context.push('/search'),
+                                  icon: const Icon(
+                                    Icons.search,
+                                    size: 20,
+                                    color: Color(0xFF999999),
                                   ),
                                 ),
                               ),

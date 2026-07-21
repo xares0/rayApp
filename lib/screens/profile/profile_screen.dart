@@ -7,6 +7,7 @@ import '../../providers/chat_provider.dart';
 import '../../providers/gift_provider.dart';
 import '../../providers/profile_provider.dart';
 import '../../repositories/app_repository.dart';
+import '../../utils/user_format.dart';
 import '../../widgets/smart_avatar.dart';
 
 class ProfileScreen extends ConsumerWidget {
@@ -196,23 +197,23 @@ class ProfileScreen extends ConsumerWidget {
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
                                     // 性别图标预留（根据 user.gender）
-                                    Icon(
-                                      (user.gender == 'female')
-                                          ? Icons.female
-                                          : Icons.male,
+                                    // Icon(
+                                    //   (user.gender == 'female')
+                                    //       ? Icons.female
+                                    //       : Icons.male,
+                                    //   key: const ValueKey<String>(
+                                    //     'profile.genderIcon',
+                                    //   ),
+                                    //   size: 10,
+                                    //   color: const Color(0xFF7C67D0),
+                                    // ),
+                                    // const SizedBox(width: 2),
+                                    Text(
+                                      '${ageFromBirthday(user.birthday)}',
                                       key: const ValueKey<String>(
-                                        'profile.genderIcon',
-                                      ),
-                                      size: 10,
-                                      color: const Color(0xFF7C67D0),
-                                    ),
-                                    const SizedBox(width: 2),
-                                    const Text(
-                                      '25', // 预留待确认：年龄从 birthday 计算
-                                      key: ValueKey<String>(
                                         'profile.ageText',
                                       ),
-                                      style: TextStyle(
+                                      style: const TextStyle(
                                         fontFamily: 'PingFang SC',
                                         fontSize: 10,
                                         color: Color(0xFF333333),

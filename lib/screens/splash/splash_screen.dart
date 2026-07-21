@@ -41,7 +41,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
       backgroundColor: Colors.black,
       body: Center(
         child: Text(
-          'photomate',
+          '越她 photomate',
           style: TextStyle(
             fontSize: 32,
             color: Colors.white,

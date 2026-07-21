@@ -35,7 +35,7 @@ class AboutUsScreen extends StatelessWidget {
             const SizedBox(height: 18),
             const Text(
               key: ValueKey<String>('about.appName'),
-              'photomate',
+              '越她 photomate',
               style: TextStyle(
                 color: Color(0xFF222222),
                 fontSize: 24,
@@ -74,7 +74,7 @@ class AboutUsScreen extends StatelessWidget {
             const Padding(
               padding: EdgeInsets.only(bottom: 28),
               child: Text(
-                'Copyright © photomate',
+                'Copyright © 越她 photomate',
                 style: TextStyle(
                   color: Color(0xFFC0C0C0),
                   fontSize: 12,

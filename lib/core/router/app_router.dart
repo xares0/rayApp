@@ -14,10 +14,15 @@ import '../../screens/discover/discover_screen.dart';
 import '../../screens/profile/profile_screen.dart';
 
 // Keeps other secondary screens
+import '../../models/post.dart';
 import '../../screens/moment/moment_detail_screen.dart';
+import '../../screens/moment/video_feed_screen.dart';
 import '../../screens/moment/add_moment_screen.dart';
 import '../../screens/message/message_list_screen.dart';
 import '../../screens/message/chat_room_screen.dart';
+import '../../screens/message/chat_settings_screen.dart';
+import '../../screens/message/user_search_screen.dart';
+import '../../screens/message/system_notice_screen.dart';
 import '../../screens/message/system_notifications_screen.dart';
 import '../../screens/profile/subscreens/edit_profile_screen.dart';
 import '../../screens/profile/user_profile_screen.dart';
@@ -234,6 +239,10 @@ GoRouter appRouter(Ref ref) {
       ),
       GoRoute(
         path: '/system_notifications',
+        builder: (context, state) => const SystemNoticeScreen(),
+      ),
+      GoRoute(
+        path: '/interaction_notifications',
         builder: (context, state) => const SystemNotificationsScreen(),
       ),
       GoRoute(
@@ -259,10 +268,32 @@ GoRouter appRouter(Ref ref) {
         },
       ),
       GoRoute(
+        path: '/chat_settings/:userId',
+        builder: (context, state) {
+          final userId = state.pathParameters['userId']!;
+          return ChatSettingsScreen(otherUserId: userId);
+        },
+      ),
+      GoRoute(
+        path: '/search',
+        builder: (context, state) => const UserSearchScreen(),
+      ),
+      GoRoute(
         path: '/user_profile/:userId',
         builder: (context, state) {
           final userId = state.pathParameters['userId']!;
           return UserProfileScreen(userId: userId);
+        },
+      ),
+      // 全屏视频查看（Figma v4 37:624）。posts/initialIndex 经 extra 传入。
+      // 必须走 go_router（声明式），与裸 Navigator.push 混用会触发 keyReservation 崩溃。
+      GoRoute(
+        path: '/video_feed',
+        builder: (context, state) {
+          final extra = state.extra as Map<String, dynamic>?;
+          final posts = (extra?['posts'] as List<Post>?) ?? const <Post>[];
+          final initialIndex = (extra?['initialIndex'] as int?) ?? 0;
+          return VideoFeedScreen(posts: posts, initialIndex: initialIndex);
         },
       ),
       GoRoute(

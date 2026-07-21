@@ -12,6 +12,7 @@ _$PostImpl _$$PostImplFromJson(Map<String, dynamic> json) => _$PostImpl(
       images:
           (json['images'] as List<dynamic>).map((e) => e as String).toList(),
       content: json['content'] as String,
+      contentOriginal: json['contentOriginal'] as String? ?? '',
       likesCount: (json['likesCount'] as num?)?.toInt() ?? 0,
       commentsCount: (json['commentsCount'] as num?)?.toInt() ?? 0,
       isLiked: json['isLiked'] as bool? ?? false,
@@ -29,6 +30,7 @@ Map<String, dynamic> _$$PostImplToJson(_$PostImpl instance) =>
       'userId': instance.userId,
       'images': instance.images,
       'content': instance.content,
+      'contentOriginal': instance.contentOriginal,
       'likesCount': instance.likesCount,
       'commentsCount': instance.commentsCount,
       'isLiked': instance.isLiked,

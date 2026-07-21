@@ -24,6 +24,7 @@ mixin _$User {
   String get name => throw _privateConstructorUsedError;
   String get avatarUrl => throw _privateConstructorUsedError;
   String get bio => throw _privateConstructorUsedError;
+  String get bioOriginal => throw _privateConstructorUsedError;
   List<String> get portfolioImages => throw _privateConstructorUsedError;
   String? get remarkName => throw _privateConstructorUsedError;
   int get followersCount => throw _privateConstructorUsedError;
@@ -31,7 +32,14 @@ mixin _$User {
   bool get isFollowing => throw _privateConstructorUsedError;
   String get gender => throw _privateConstructorUsedError;
   String? get birthday => throw _privateConstructorUsedError;
-  bool get isProfileCompleted => throw _privateConstructorUsedError;
+  bool get isProfileCompleted =>
+      throw _privateConstructorUsedError; // 第四次迭代「用户信息字段显示」：以接口返回为准，null 表示未返回不显示
+  String? get nationality =>
+      throw _privateConstructorUsedError; // 国籍（中文国名，如「中国」「越南」）
+  bool? get isOnline => throw _privateConstructorUsedError; // 在线状态
+  int? get heightCm => throw _privateConstructorUsedError; // 身高（cm）
+  int? get weightKg => throw _privateConstructorUsedError; // 体重（kg）
+  String? get displayId => throw _privateConstructorUsedError;
 
   /// Serializes this User to a JSON map.
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
@@ -52,6 +60,7 @@ abstract class $UserCopyWith<$Res> {
       String name,
       String avatarUrl,
       String bio,
+      String bioOriginal,
       List<String> portfolioImages,
       String? remarkName,
       int followersCount,
@@ -59,7 +68,12 @@ abstract class $UserCopyWith<$Res> {
       bool isFollowing,
       String gender,
       String? birthday,
-      bool isProfileCompleted});
+      bool isProfileCompleted,
+      String? nationality,
+      bool? isOnline,
+      int? heightCm,
+      int? weightKg,
+      String? displayId});
 }
 
 /// @nodoc
@@ -81,6 +95,7 @@ class _$UserCopyWithImpl<$Res, $Val extends User>
     Object? name = null,
     Object? avatarUrl = null,
     Object? bio = null,
+    Object? bioOriginal = null,
     Object? portfolioImages = null,
     Object? remarkName = freezed,
     Object? followersCount = null,
@@ -89,6 +104,11 @@ class _$UserCopyWithImpl<$Res, $Val extends User>
     Object? gender = null,
     Object? birthday = freezed,
     Object? isProfileCompleted = null,
+    Object? nationality = freezed,
+    Object? isOnline = freezed,
+    Object? heightCm = freezed,
+    Object? weightKg = freezed,
+    Object? displayId = freezed,
   }) {
     return _then(_value.copyWith(
       id: null == id
@@ -106,6 +126,10 @@ class _$UserCopyWithImpl<$Res, $Val extends User>
       bio: null == bio
           ? _value.bio
           : bio // ignore: cast_nullable_to_non_nullable
+              as String,
+      bioOriginal: null == bioOriginal
+          ? _value.bioOriginal
+          : bioOriginal // ignore: cast_nullable_to_non_nullable
               as String,
       portfolioImages: null == portfolioImages
           ? _value.portfolioImages
@@ -139,6 +163,26 @@ class _$UserCopyWithImpl<$Res, $Val extends User>
           ? _value.isProfileCompleted
           : isProfileCompleted // ignore: cast_nullable_to_non_nullable
               as bool,
+      nationality: freezed == nationality
+          ? _value.nationality
+          : nationality // ignore: cast_nullable_to_non_nullable
+              as String?,
+      isOnline: freezed == isOnline
+          ? _value.isOnline
+          : isOnline // ignore: cast_nullable_to_non_nullable
+              as bool?,
+      heightCm: freezed == heightCm
+          ? _value.heightCm
+          : heightCm // ignore: cast_nullable_to_non_nullable
+              as int?,
+      weightKg: freezed == weightKg
+          ? _value.weightKg
+          : weightKg // ignore: cast_nullable_to_non_nullable
+              as int?,
+      displayId: freezed == displayId
+          ? _value.displayId
+          : displayId // ignore: cast_nullable_to_non_nullable
+              as String?,
     ) as $Val);
   }
 }
@@ -155,6 +199,7 @@ abstract class _$$UserImplCopyWith<$Res> implements $UserCopyWith<$Res> {
       String name,
       String avatarUrl,
       String bio,
+      String bioOriginal,
       List<String> portfolioImages,
       String? remarkName,
       int followersCount,
@@ -162,7 +207,12 @@ abstract class _$$UserImplCopyWith<$Res> implements $UserCopyWith<$Res> {
       bool isFollowing,
       String gender,
       String? birthday,
-      bool isProfileCompleted});
+      bool isProfileCompleted,
+      String? nationality,
+      bool? isOnline,
+      int? heightCm,
+      int? weightKg,
+      String? displayId});
 }
 
 /// @nodoc
@@ -181,6 +231,7 @@ class __$$UserImplCopyWithImpl<$Res>
     Object? name = null,
     Object? avatarUrl = null,
     Object? bio = null,
+    Object? bioOriginal = null,
     Object? portfolioImages = null,
     Object? remarkName = freezed,
     Object? followersCount = null,
@@ -189,6 +240,11 @@ class __$$UserImplCopyWithImpl<$Res>
     Object? gender = null,
     Object? birthday = freezed,
     Object? isProfileCompleted = null,
+    Object? nationality = freezed,
+    Object? isOnline = freezed,
+    Object? heightCm = freezed,
+    Object? weightKg = freezed,
+    Object? displayId = freezed,
   }) {
     return _then(_$UserImpl(
       id: null == id
@@ -206,6 +262,10 @@ class __$$UserImplCopyWithImpl<$Res>
       bio: null == bio
           ? _value.bio
           : bio // ignore: cast_nullable_to_non_nullable
+              as String,
+      bioOriginal: null == bioOriginal
+          ? _value.bioOriginal
+          : bioOriginal // ignore: cast_nullable_to_non_nullable
               as String,
       portfolioImages: null == portfolioImages
           ? _value._portfolioImages
@@ -239,6 +299,26 @@ class __$$UserImplCopyWithImpl<$Res>
           ? _value.isProfileCompleted
           : isProfileCompleted // ignore: cast_nullable_to_non_nullable
               as bool,
+      nationality: freezed == nationality
+          ? _value.nationality
+          : nationality // ignore: cast_nullable_to_non_nullable
+              as String?,
+      isOnline: freezed == isOnline
+          ? _value.isOnline
+          : isOnline // ignore: cast_nullable_to_non_nullable
+              as bool?,
+      heightCm: freezed == heightCm
+          ? _value.heightCm
+          : heightCm // ignore: cast_nullable_to_non_nullable
+              as int?,
+      weightKg: freezed == weightKg
+          ? _value.weightKg
+          : weightKg // ignore: cast_nullable_to_non_nullable
+              as int?,
+      displayId: freezed == displayId
+          ? _value.displayId
+          : displayId // ignore: cast_nullable_to_non_nullable
+              as String?,
     ));
   }
 }
@@ -251,6 +331,7 @@ class _$UserImpl implements _User {
       required this.name,
       required this.avatarUrl,
       required this.bio,
+      this.bioOriginal = '',
       final List<String> portfolioImages = const <String>[],
       this.remarkName,
       this.followersCount = 0,
@@ -258,7 +339,12 @@ class _$UserImpl implements _User {
       this.isFollowing = false,
       this.gender = 'male',
       this.birthday,
-      this.isProfileCompleted = false})
+      this.isProfileCompleted = false,
+      this.nationality,
+      this.isOnline,
+      this.heightCm,
+      this.weightKg,
+      this.displayId})
       : _portfolioImages = portfolioImages;
 
   factory _$UserImpl.fromJson(Map<String, dynamic> json) =>
@@ -272,6 +358,9 @@ class _$UserImpl implements _User {
   final String avatarUrl;
   @override
   final String bio;
+  @override
+  @JsonKey()
+  final String bioOriginal;
   final List<String> _portfolioImages;
   @override
   @JsonKey()
@@ -300,10 +389,25 @@ class _$UserImpl implements _User {
   @override
   @JsonKey()
   final bool isProfileCompleted;
+// 第四次迭代「用户信息字段显示」：以接口返回为准，null 表示未返回不显示
+  @override
+  final String? nationality;
+// 国籍（中文国名，如「中国」「越南」）
+  @override
+  final bool? isOnline;
+// 在线状态
+  @override
+  final int? heightCm;
+// 身高（cm）
+  @override
+  final int? weightKg;
+// 体重（kg）
+  @override
+  final String? displayId;
 
   @override
   String toString() {
-    return 'User(id: $id, name: $name, avatarUrl: $avatarUrl, bio: $bio, portfolioImages: $portfolioImages, remarkName: $remarkName, followersCount: $followersCount, followingCount: $followingCount, isFollowing: $isFollowing, gender: $gender, birthday: $birthday, isProfileCompleted: $isProfileCompleted)';
+    return 'User(id: $id, name: $name, avatarUrl: $avatarUrl, bio: $bio, bioOriginal: $bioOriginal, portfolioImages: $portfolioImages, remarkName: $remarkName, followersCount: $followersCount, followingCount: $followingCount, isFollowing: $isFollowing, gender: $gender, birthday: $birthday, isProfileCompleted: $isProfileCompleted, nationality: $nationality, isOnline: $isOnline, heightCm: $heightCm, weightKg: $weightKg, displayId: $displayId)';
   }
 
   @override
@@ -316,6 +420,8 @@ class _$UserImpl implements _User {
             (identical(other.avatarUrl, avatarUrl) ||
                 other.avatarUrl == avatarUrl) &&
             (identical(other.bio, bio) || other.bio == bio) &&
+            (identical(other.bioOriginal, bioOriginal) ||
+                other.bioOriginal == bioOriginal) &&
             const DeepCollectionEquality()
                 .equals(other._portfolioImages, _portfolioImages) &&
             (identical(other.remarkName, remarkName) ||
@@ -330,7 +436,17 @@ class _$UserImpl implements _User {
             (identical(other.birthday, birthday) ||
                 other.birthday == birthday) &&
             (identical(other.isProfileCompleted, isProfileCompleted) ||
-                other.isProfileCompleted == isProfileCompleted));
+                other.isProfileCompleted == isProfileCompleted) &&
+            (identical(other.nationality, nationality) ||
+                other.nationality == nationality) &&
+            (identical(other.isOnline, isOnline) ||
+                other.isOnline == isOnline) &&
+            (identical(other.heightCm, heightCm) ||
+                other.heightCm == heightCm) &&
+            (identical(other.weightKg, weightKg) ||
+                other.weightKg == weightKg) &&
+            (identical(other.displayId, displayId) ||
+                other.displayId == displayId));
   }
 
   @JsonKey(includeFromJson: false, includeToJson: false)
@@ -341,6 +457,7 @@ class _$UserImpl implements _User {
       name,
       avatarUrl,
       bio,
+      bioOriginal,
       const DeepCollectionEquality().hash(_portfolioImages),
       remarkName,
       followersCount,
@@ -348,7 +465,12 @@ class _$UserImpl implements _User {
       isFollowing,
       gender,
       birthday,
-      isProfileCompleted);
+      isProfileCompleted,
+      nationality,
+      isOnline,
+      heightCm,
+      weightKg,
+      displayId);
 
   /// Create a copy of User
   /// with the given fields replaced by the non-null parameter values.
@@ -372,6 +494,7 @@ abstract class _User implements User {
       required final String name,
       required final String avatarUrl,
       required final String bio,
+      final String bioOriginal,
       final List<String> portfolioImages,
       final String? remarkName,
       final int followersCount,
@@ -379,7 +502,12 @@ abstract class _User implements User {
       final bool isFollowing,
       final String gender,
       final String? birthday,
-      final bool isProfileCompleted}) = _$UserImpl;
+      final bool isProfileCompleted,
+      final String? nationality,
+      final bool? isOnline,
+      final int? heightCm,
+      final int? weightKg,
+      final String? displayId}) = _$UserImpl;
 
   factory _User.fromJson(Map<String, dynamic> json) = _$UserImpl.fromJson;
 
@@ -391,6 +519,8 @@ abstract class _User implements User {
   String get avatarUrl;
   @override
   String get bio;
+  @override
+  String get bioOriginal;
   @override
   List<String> get portfolioImages;
   @override
@@ -406,7 +536,17 @@ abstract class _User implements User {
   @override
   String? get birthday;
   @override
-  bool get isProfileCompleted;
+  bool get isProfileCompleted; // 第四次迭代「用户信息字段显示」：以接口返回为准，null 表示未返回不显示
+  @override
+  String? get nationality; // 国籍（中文国名，如「中国」「越南」）
+  @override
+  bool? get isOnline; // 在线状态
+  @override
+  int? get heightCm; // 身高（cm）
+  @override
+  int? get weightKg; // 体重（kg）
+  @override
+  String? get displayId;
 
   /// Create a copy of User
   /// with the given fields replaced by the non-null parameter values.

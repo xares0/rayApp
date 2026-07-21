@@ -63,13 +63,33 @@ Future<bool> showFigmaBellConfirmDialog(
 }
 
 Future<bool> showFigmaDeletePostDialog(BuildContext context) async {
+  return showFigmaTrashConfirmDialog(
+    context,
+    title: '删除投稿',
+    message: '投稿删除后不可恢复，\n是否删除投稿？',
+  );
+}
+
+/// 垃圾桶图标 + 标题 + 文案 + 取消/确认胶囊钮的确认弹窗（Figma「动态清除」同款）。
+Future<bool> showFigmaTrashConfirmDialog(
+  BuildContext context, {
+  required String title,
+  required String message,
+  String cancelText = '取消',
+  String confirmText = '确认',
+}) async {
   final result = await showDialog<bool>(
     context: context,
     barrierDismissible: true,
     barrierColor: _kDialogBarrier,
     builder: (context) {
-      return const _TransparentDialog(
-        child: _FigmaDeletePostDialog(),
+      return _TransparentDialog(
+        child: _FigmaTrashConfirmDialog(
+          title: title,
+          message: message,
+          cancelText: cancelText,
+          confirmText: confirmText,
+        ),
       );
     },
   );
@@ -79,8 +99,10 @@ Future<bool> showFigmaDeletePostDialog(BuildContext context) async {
 Future<bool> showFigmaSplitConfirmDialog(
   BuildContext context, {
   required String message,
+  String? title,
   String cancelText = '取消',
   String confirmText = '确定',
+  Color cancelColor = _kDialogPurple,
 }) async {
   final result = await showDialog<bool>(
     context: context,
@@ -90,13 +112,45 @@ Future<bool> showFigmaSplitConfirmDialog(
       return _TransparentDialog(
         child: _FigmaSplitConfirmDialog(
           message: message,
+          title: title,
+          cancelText: cancelText,
+          confirmText: confirmText,
+          cancelColor: cancelColor,
+        ),
+      );
+    },
+  );
+  return result ?? false;
+}
+
+/// 标题 + 居中输入框（带清除钮）+ 取消/确认分栏钮的输入弹窗（Figma「设置备注」同款）。
+/// 返回输入文本；取消 / 点击蒙层返回 null。
+Future<String?> showFigmaInputDialog(
+  BuildContext context, {
+  required String title,
+  String initialValue = '',
+  String hintText = '',
+  int maxLength = 20,
+  String cancelText = '取消',
+  String confirmText = '确认',
+}) {
+  return showDialog<String>(
+    context: context,
+    barrierDismissible: true,
+    barrierColor: _kDialogBarrier,
+    builder: (context) {
+      return _TransparentDialog(
+        child: _FigmaInputDialog(
+          title: title,
+          initialValue: initialValue,
+          hintText: hintText,
+          maxLength: maxLength,
           cancelText: cancelText,
           confirmText: confirmText,
         ),
       );
     },
   );
-  return result ?? false;
 }
 
 Future<void> showImagePreview(BuildContext context, String imageUrl) async {
@@ -275,8 +329,18 @@ class _FigmaBellConfirmDialog extends StatelessWidget {
   }
 }
 
-class _FigmaDeletePostDialog extends StatelessWidget {
-  const _FigmaDeletePostDialog();
+class _FigmaTrashConfirmDialog extends StatelessWidget {
+  const _FigmaTrashConfirmDialog({
+    required this.title,
+    required this.message,
+    required this.cancelText,
+    required this.confirmText,
+  });
+
+  final String title;
+  final String message;
+  final String cancelText;
+  final String confirmText;
 
   @override
   Widget build(BuildContext context) {
@@ -345,28 +409,28 @@ class _FigmaDeletePostDialog extends StatelessWidget {
               ),
             ),
           ),
-          const Positioned(
+          Positioned(
             left: 0,
             right: 0,
             top: 53,
             child: Text(
-              '删除投稿',
+              title,
               textAlign: TextAlign.center,
-              style: TextStyle(
+              style: const TextStyle(
                 color: Color(0xFF333333),
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
               ),
             ),
           ),
-          const Positioned(
-            left: 0,
-            right: 0,
+          Positioned(
+            left: 16,
+            right: 16,
             top: 89,
             child: Text(
-              '投稿删除后不可恢复，\n是否删除投稿？',
+              message,
               textAlign: TextAlign.center,
-              style: TextStyle(
+              style: const TextStyle(
                 color: Color(0xFF666666),
                 fontSize: 16,
                 height: 1.3,
@@ -379,7 +443,7 @@ class _FigmaDeletePostDialog extends StatelessWidget {
             width: 110,
             height: 34,
             child: _DialogOutlinedPillButton(
-              label: '取消',
+              label: cancelText,
               onTap: () => Navigator.of(context).pop(false),
             ),
           ),
@@ -389,7 +453,7 @@ class _FigmaDeletePostDialog extends StatelessWidget {
             width: 110,
             height: 34,
             child: _DialogGradientPillButton(
-              label: '确认',
+              label: confirmText,
               onTap: () => Navigator.of(context).pop(true),
             ),
           ),
@@ -537,17 +601,20 @@ class _FigmaSplitConfirmDialog extends StatelessWidget {
     required this.message,
     required this.cancelText,
     required this.confirmText,
+    this.title,
+    this.cancelColor = _kDialogPurple,
   });
 
   final String message;
   final String cancelText;
   final String confirmText;
+  final String? title;
+  final Color cancelColor;
 
   @override
   Widget build(BuildContext context) {
     return SizedBox(
       width: 280,
-      height: 120,
       child: DecoratedBox(
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(12),
@@ -569,21 +636,35 @@ class _FigmaSplitConfirmDialog extends StatelessWidget {
           ],
         ),
         child: Column(
+          mainAxisSize: MainAxisSize.min,
           children: [
-            Expanded(
-              child: Center(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 20),
-                  child: Text(
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 22, 20, 20),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (title != null) ...[
+                    Text(
+                      title!,
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        color: Color(0xFF333333),
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                  ],
+                  Text(
                     message,
                     textAlign: TextAlign.center,
                     style: const TextStyle(
                       color: Color(0xFF333333),
                       fontSize: 15,
-                      height: 1.35,
+                      height: 1.4,
                     ),
                   ),
-                ),
+                ],
               ),
             ),
             const Divider(
@@ -604,8 +685,8 @@ class _FigmaSplitConfirmDialog extends StatelessWidget {
                       child: Center(
                         child: Text(
                           cancelText,
-                          style: const TextStyle(
-                            color: _kDialogPurple,
+                          style: TextStyle(
+                            color: cancelColor,
                             fontSize: 18,
                           ),
                         ),
@@ -626,6 +707,189 @@ class _FigmaSplitConfirmDialog extends StatelessWidget {
                       child: Center(
                         child: Text(
                           confirmText,
+                          style: const TextStyle(
+                            color: _kDialogPurple,
+                            fontSize: 18,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// 「设置备注」输入弹窗：标题 + 灰底输入框（带清除钮）+ 取消/确认分栏钮。
+class _FigmaInputDialog extends StatefulWidget {
+  const _FigmaInputDialog({
+    required this.title,
+    required this.initialValue,
+    required this.hintText,
+    required this.maxLength,
+    required this.cancelText,
+    required this.confirmText,
+  });
+
+  final String title;
+  final String initialValue;
+  final String hintText;
+  final int maxLength;
+  final String cancelText;
+  final String confirmText;
+
+  @override
+  State<_FigmaInputDialog> createState() => _FigmaInputDialogState();
+}
+
+class _FigmaInputDialogState extends State<_FigmaInputDialog> {
+  late final TextEditingController _controller =
+      TextEditingController(text: widget.initialValue);
+
+  @override
+  void initState() {
+    super.initState();
+    _controller.addListener(_onChanged);
+  }
+
+  void _onChanged() => setState(() {});
+
+  @override
+  void dispose() {
+    _controller.removeListener(_onChanged);
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: 280,
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(12),
+          gradient: const LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              Color(0xFFF0EBFF),
+              Colors.white,
+            ],
+            stops: [0, 0.25],
+          ),
+          boxShadow: const [
+            BoxShadow(
+              color: Color(0x14000000),
+              blurRadius: 22,
+              offset: Offset(0, 12),
+            ),
+          ],
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 22, 20, 20),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    widget.title,
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      color: Color(0xFF333333),
+                      fontSize: 16,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Container(
+                    height: 39,
+                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF3F3F3),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: TextField(
+                            controller: _controller,
+                            autofocus: true,
+                            maxLength: widget.maxLength,
+                            style: const TextStyle(
+                                color: Color(0xFF333333), fontSize: 16),
+                            decoration: InputDecoration(
+                              isCollapsed: true,
+                              border: InputBorder.none,
+                              counterText: '',
+                              hintText: widget.hintText,
+                              hintStyle: const TextStyle(
+                                  color: Color(0xFFBBBBBB), fontSize: 16),
+                            ),
+                          ),
+                        ),
+                        if (_controller.text.isNotEmpty)
+                          GestureDetector(
+                            onTap: _controller.clear,
+                            child: const Padding(
+                              padding: EdgeInsets.only(left: 6),
+                              child: Icon(Icons.cancel,
+                                  size: 16, color: Color(0xFFBFBFBF)),
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const Divider(
+              height: 0.5,
+              thickness: 0.5,
+              color: Color(0xFFE5E5E5),
+            ),
+            SizedBox(
+              height: 49.5,
+              child: Row(
+                children: [
+                  Expanded(
+                    child: InkWell(
+                      borderRadius: const BorderRadius.only(
+                        bottomLeft: Radius.circular(12),
+                      ),
+                      onTap: () => Navigator.of(context).pop(),
+                      child: Center(
+                        child: Text(
+                          widget.cancelText,
+                          style: const TextStyle(
+                            color: _kDialogPurple,
+                            fontSize: 18,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                  const VerticalDivider(
+                    width: 0.5,
+                    thickness: 0.5,
+                    color: Color(0xFFE5E5E5),
+                  ),
+                  Expanded(
+                    child: InkWell(
+                      borderRadius: const BorderRadius.only(
+                        bottomRight: Radius.circular(12),
+                      ),
+                      onTap: () => Navigator.of(context).pop(_controller.text),
+                      child: Center(
+                        child: Text(
+                          widget.confirmText,
                           style: const TextStyle(
                             color: _kDialogPurple,
                             fontSize: 18,

@@ -11,7 +11,9 @@ import '../../providers/auth_provider.dart';
 import '../../providers/blocked_users_provider.dart';
 import '../../providers/style_view_mode_provider.dart';
 import '../../repositories/app_repository.dart';
+import '../../utils/user_format.dart';
 import '../../widgets/category_tab_bar.dart';
+import '../../widgets/hi_greet_button.dart';
 import '../../widgets/smart_image.dart';
 
 /// 拍友卡片「评论/招呼」入口进入会话时自动发送的预设招呼语。
@@ -500,16 +502,14 @@ class _StyleUserMasonry extends StatelessWidget {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        SizedBox(
-          width: 166,
+        Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: leftColumn,
           ),
         ),
         const SizedBox(width: 11),
-        SizedBox(
-          width: 166,
+        Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: rightColumn,
@@ -582,7 +582,7 @@ class _StyleUserCard extends StatelessWidget {
                               colors: [
                                 Colors.transparent,
                                 Colors.transparent,
-                                Colors.black.withValues(alpha: 0.78),
+                                Colors.black.withOpacity(0.78),
                               ],
                               stops: const [0, 0.55, 1],
                             ),
@@ -627,6 +627,7 @@ class _StyleUserCard extends StatelessWidget {
               child: _StyleUserBadge(
                 age: displayAge,
                 isFemale: isFemale,
+                nationality: user.nationality,
               ),
             ),
             Positioned(
@@ -636,7 +637,7 @@ class _StyleUserCard extends StatelessWidget {
                 key: ValueKey<String>('style_chat_button_${user.id}'),
                 behavior: HitTestBehavior.opaque,
                 onTap: onContact,
-                child: _StyleHiButton(contacted: contacted),
+                child: HiGreetButton(contacted: contacted),
               ),
             ),
           ],
@@ -761,6 +762,21 @@ class _StyleUserListCard extends StatelessWidget {
                   borderRadius: BorderRadius.circular(8),
                 ),
               ),
+              // 在线状态：vv2 需求——首页列表所有用户默认显示在线绿点（不再依赖 isOnline）
+              Positioned(
+                left: 104,
+                top: 12,
+                width: 12,
+                height: 12,
+                child: Container(
+                  key: ValueKey<String>('style_list_online_${user.id}'),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF44D7B6),
+                    shape: BoxShape.circle,
+                    border: Border.all(color: Colors.white, width: 1.5),
+                  ),
+                ),
+              ),
               Positioned(
                 left: 130,
                 top: 6,
@@ -794,18 +810,16 @@ class _StyleUserListCard extends StatelessWidget {
                   key: ValueKey<String>('style_list_chat_button_${user.id}'),
                   behavior: HitTestBehavior.opaque,
                   onTap: onContact,
-                  child: _StyleHiButton(contacted: contacted),
+                  child: HiGreetButton(contacted: contacted),
                 ),
               ),
+              // vv2 列表信息行：性别+国籍 · 年龄 · 身高 · 体重（统一浅紫胶囊；身高/体重未返回不显示）
               Positioned(
                 left: 130,
                 top: 32,
-                width: 46,
+                right: 8,
                 height: 14,
-                child: _StyleAgePill(
-                  age: ageFromBirthday(user.birthday),
-                  isFemale: _isFemale,
-                ),
+                child: _StyleListInfoRow(user: user, isFemale: _isFemale),
               ),
               Positioned(
                 left: 130,
@@ -845,41 +859,96 @@ class _StyleUserListCard extends StatelessWidget {
   }
 }
 
-class _StyleAgePill extends StatelessWidget {
-  const _StyleAgePill({
-    required this.age,
-    required this.isFemale,
-  });
+/// 列表卡用户信息行（vv2 推荐列表）：性别+国籍 · 年龄 · 身高 · 体重，统一浅紫胶囊。
+/// 国籍/身高/体重未返回则该项不显示；性别图标始终随第一颗胶囊展示。
+class _StyleListInfoRow extends StatelessWidget {
+  const _StyleListInfoRow({required this.user, required this.isFemale});
 
-  final int age;
+  final User user;
   final bool isFemale;
 
   @override
   Widget build(BuildContext context) {
-    return DecoratedBox(
+    // 国籍优先显示国旗 emoji，未命中映射时回退中文国名，均无则只显示性别。
+    final flag = nationalityFlag(user.nationality);
+    final nation = user.nationality?.trim();
+    final nationText =
+        flag ?? ((nation != null && nation.isNotEmpty) ? nation : null);
+
+    final pills = <Widget>[];
+
+    // 国籍独立胶囊（若有）
+    if (nationText != null) {
+      pills.add(_StyleInfoPill(text: nationText));
+    }
+
+    // 性别 + 年龄胶囊
+    pills.add(_StyleInfoPill(
+      // leadingIcon: isFemale ? Icons.female : Icons.male,
+      // iconColor:
+      //     isFemale ? const Color(0xFFFF68B4) : const Color(0xFF67A8FF),
+      text: '${ageFromBirthday(user.birthday)}岁',
+    ));
+
+    // 极端窄屏/超长字段时整行等比缩小，避免溢出（正常数据下保持原始尺寸）。
+    return FittedBox(
+      fit: BoxFit.scaleDown,
+      alignment: Alignment.centerLeft,
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          for (int i = 0; i < pills.length; i++) ...[
+            if (i > 0) const SizedBox(width: 4),
+            pills[i],
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+/// vv2 推荐列表统一信息胶囊：浅紫底 + 深灰文字，可带前置性别图标。
+class _StyleInfoPill extends StatelessWidget {
+  const _StyleInfoPill({
+    // ignore: unused_element_parameter
+    this.leadingIcon,
+    // ignore: unused_element_parameter
+    this.iconColor,
+    this.text,
+  });
+
+  final IconData? leadingIcon;
+  final Color? iconColor;
+  final String? text;
+
+  @override
+  Widget build(BuildContext context) {
+    final hasIcon = leadingIcon != null;
+    final hasText = text != null && text!.isNotEmpty;
+    return Container(
+      height: 14,
+      padding: const EdgeInsets.symmetric(horizontal: 6),
+      alignment: Alignment.center,
       decoration: BoxDecoration(
-        color: const Color(0xFFF3F3F3),
+        color: const Color(0xFFD6A4FF).withOpacity(0.2),
         borderRadius: BorderRadius.circular(7),
       ),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
+        mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(
-            isFemale ? Icons.female : Icons.male,
-            size: 10,
-            color: isFemale ? const Color(0xFFFF68B4) : const Color(0xFF67A8FF),
-          ),
-          const SizedBox(width: 2),
-          Text(
-            '$age岁',
-            style: const TextStyle(
-              color: Color(0xFF999999),
-              fontFamily: 'PingFang SC',
-              fontSize: 10,
-              fontWeight: FontWeight.w400,
-              height: 14 / 10,
+          if (hasIcon) Icon(leadingIcon, size: 10, color: iconColor),
+          if (hasIcon && hasText) const SizedBox(width: 2),
+          if (hasText)
+            Text(
+              text!,
+              style: const TextStyle(
+                color: Color(0xFF333333),
+                fontFamily: 'PingFang SC',
+                fontSize: 10,
+                fontWeight: FontWeight.w400,
+                height: 14 / 10,
+              ),
             ),
-          ),
         ],
       ),
     );
@@ -890,99 +959,78 @@ class _StyleUserBadge extends StatelessWidget {
   const _StyleUserBadge({
     required this.age,
     required this.isFemale,
+    this.nationality,
   });
 
   final int age;
   final bool isFemale;
+  final String? nationality; // 国籍（第四次迭代瀑布流新增，未返回不显示）
 
   @override
   Widget build(BuildContext context) {
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color: const Color(0xFF323232),
-        borderRadius: BorderRadius.circular(999),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              isFemale ? Icons.female : Icons.male,
-              size: 10,
-              color:
-                  isFemale ? const Color(0xFFFF7DBA) : const Color(0xFF6CB8FF),
+    final nation = nationality?.trim();
+    final hasNation = nation != null && nation.isNotEmpty;
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        // 性别 & 年龄标签
+        Container(
+          height: 14,
+          padding: const EdgeInsets.symmetric(horizontal: 6),
+          decoration: BoxDecoration(
+            color: const Color(0xFF323232),
+            borderRadius: BorderRadius.circular(7),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Icon(
+              //   isFemale ? Icons.female : Icons.male,
+              //   size: 10,
+              //   color: isFemale
+              //       ? const Color(0xFFFF7DBA)
+              //       : const Color(0xFF6CB8FF),
+              // ),
+              // const SizedBox(width: 2),
+              Text(
+                '$age',
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 10,
+                  fontFamily: 'PingFang SC',
+                  fontWeight: FontWeight.w400,
+                  height: 1.2,
+                ),
+              ),
+            ],
+          ),
+        ),
+        if (hasNation) ...[
+          const SizedBox(width: 4),
+          // 国籍标签（按UI图：独立紫色背景）
+          Container(
+            height: 14,
+            padding: const EdgeInsets.symmetric(horizontal: 6),
+            decoration: BoxDecoration(
+              color: const Color(0xFFD6A4FF),
+              borderRadius: BorderRadius.circular(7),
             ),
-            const SizedBox(width: 2),
-            Text(
-              '$age',
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 10,
-                fontFamily: 'PingFang SC',
-                fontWeight: FontWeight.w400,
-                height: 1.2,
+            child: Center(
+              child: Text(
+                nation,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 10,
+                  fontFamily: 'PingFang SC',
+                  fontWeight: FontWeight.w400,
+                  height: 1.2,
+                ),
               ),
             ),
-          ],
-        ),
-      ),
+          ),
+        ],
+      ],
     );
   }
 }
 
-/// 招呼按钮：未招呼显示「Hi」渐变圆钮；招呼后变为聊天图标（评论 ICON → 聊天 ICON）。
-class _StyleHiButton extends StatelessWidget {
-  const _StyleHiButton({required this.contacted});
-
-  final bool contacted;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: 34,
-      height: 34,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        gradient: const LinearGradient(
-          begin: Alignment.centerLeft,
-          end: Alignment.centerRight,
-          colors: [
-            Color(0xFF7DDFFF),
-            Color(0xFFDCA0FF),
-          ],
-        ),
-        color: contacted ? const Color(0xFFE9DEFF) : null,
-      ),
-      alignment: Alignment.center,
-      child: contacted
-          ? const Icon(
-              Icons.chat_bubble_outline_rounded,
-              size: 18,
-              color: Colors.white,
-            )
-          : const Text(
-              'Hi',
-              style: TextStyle(
-                color: Colors.white,
-                fontFamily: 'PingFang SC',
-                fontSize: 14,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-    );
-  }
-}
-
-/// 根据生日字符串估算年龄（mock 容错，默认 25，区间 18~80）。
-int ageFromBirthday(String? birthday) {
-  if (birthday == null || birthday.isEmpty) return 25;
-  final parsed = DateTime.tryParse(birthday);
-  if (parsed == null) return 25;
-  final now = DateTime.now();
-  int age = now.year - parsed.year;
-  final hasHadBirthday = now.month > parsed.month ||
-      (now.month == parsed.month && now.day >= parsed.day);
-  if (!hasHadBirthday) age -= 1;
-  return age.clamp(18, 80);
-}

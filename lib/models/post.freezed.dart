@@ -24,6 +24,8 @@ mixin _$Post {
   String get userId => throw _privateConstructorUsedError;
   List<String> get images => throw _privateConstructorUsedError;
   String get content => throw _privateConstructorUsedError;
+  String get contentOriginal =>
+      throw _privateConstructorUsedError; // 动态文本原文（译文=content），空=无原文不显示翻译
   int get likesCount => throw _privateConstructorUsedError;
   int get commentsCount => throw _privateConstructorUsedError;
   bool get isLiked => throw _privateConstructorUsedError;
@@ -54,6 +56,7 @@ abstract class $PostCopyWith<$Res> {
       String userId,
       List<String> images,
       String content,
+      String contentOriginal,
       int likesCount,
       int commentsCount,
       bool isLiked,
@@ -84,6 +87,7 @@ class _$PostCopyWithImpl<$Res, $Val extends Post>
     Object? userId = null,
     Object? images = null,
     Object? content = null,
+    Object? contentOriginal = null,
     Object? likesCount = null,
     Object? commentsCount = null,
     Object? isLiked = null,
@@ -108,6 +112,10 @@ class _$PostCopyWithImpl<$Res, $Val extends Post>
       content: null == content
           ? _value.content
           : content // ignore: cast_nullable_to_non_nullable
+              as String,
+      contentOriginal: null == contentOriginal
+          ? _value.contentOriginal
+          : contentOriginal // ignore: cast_nullable_to_non_nullable
               as String,
       likesCount: null == likesCount
           ? _value.likesCount
@@ -167,6 +175,7 @@ abstract class _$$PostImplCopyWith<$Res> implements $PostCopyWith<$Res> {
       String userId,
       List<String> images,
       String content,
+      String contentOriginal,
       int likesCount,
       int commentsCount,
       bool isLiked,
@@ -195,6 +204,7 @@ class __$$PostImplCopyWithImpl<$Res>
     Object? userId = null,
     Object? images = null,
     Object? content = null,
+    Object? contentOriginal = null,
     Object? likesCount = null,
     Object? commentsCount = null,
     Object? isLiked = null,
@@ -219,6 +229,10 @@ class __$$PostImplCopyWithImpl<$Res>
       content: null == content
           ? _value.content
           : content // ignore: cast_nullable_to_non_nullable
+              as String,
+      contentOriginal: null == contentOriginal
+          ? _value.contentOriginal
+          : contentOriginal // ignore: cast_nullable_to_non_nullable
               as String,
       likesCount: null == likesCount
           ? _value.likesCount
@@ -260,6 +274,7 @@ class _$PostImpl implements _Post {
       required this.userId,
       required final List<String> images,
       required this.content,
+      this.contentOriginal = '',
       this.likesCount = 0,
       this.commentsCount = 0,
       this.isLiked = false,
@@ -288,6 +303,10 @@ class _$PostImpl implements _Post {
   final String content;
   @override
   @JsonKey()
+  final String contentOriginal;
+// 动态文本原文（译文=content），空=无原文不显示翻译
+  @override
+  @JsonKey()
   final int likesCount;
   @override
   @JsonKey()
@@ -309,7 +328,7 @@ class _$PostImpl implements _Post {
 
   @override
   String toString() {
-    return 'Post(id: $id, userId: $userId, images: $images, content: $content, likesCount: $likesCount, commentsCount: $commentsCount, isLiked: $isLiked, createdAt: $createdAt, videoUrl: $videoUrl, category: $category, author: $author)';
+    return 'Post(id: $id, userId: $userId, images: $images, content: $content, contentOriginal: $contentOriginal, likesCount: $likesCount, commentsCount: $commentsCount, isLiked: $isLiked, createdAt: $createdAt, videoUrl: $videoUrl, category: $category, author: $author)';
   }
 
   @override
@@ -321,6 +340,8 @@ class _$PostImpl implements _Post {
             (identical(other.userId, userId) || other.userId == userId) &&
             const DeepCollectionEquality().equals(other._images, _images) &&
             (identical(other.content, content) || other.content == content) &&
+            (identical(other.contentOriginal, contentOriginal) ||
+                other.contentOriginal == contentOriginal) &&
             (identical(other.likesCount, likesCount) ||
                 other.likesCount == likesCount) &&
             (identical(other.commentsCount, commentsCount) ||
@@ -343,6 +364,7 @@ class _$PostImpl implements _Post {
       userId,
       const DeepCollectionEquality().hash(_images),
       content,
+      contentOriginal,
       likesCount,
       commentsCount,
       isLiked,
@@ -373,6 +395,7 @@ abstract class _Post implements Post {
       required final String userId,
       required final List<String> images,
       required final String content,
+      final String contentOriginal,
       final int likesCount,
       final int commentsCount,
       final bool isLiked,
@@ -391,6 +414,8 @@ abstract class _Post implements Post {
   List<String> get images;
   @override
   String get content;
+  @override
+  String get contentOriginal; // 动态文本原文（译文=content），空=无原文不显示翻译
   @override
   int get likesCount;
   @override

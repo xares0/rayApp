@@ -11,6 +11,7 @@ _$UserImpl _$$UserImplFromJson(Map<String, dynamic> json) => _$UserImpl(
       name: json['name'] as String,
       avatarUrl: json['avatarUrl'] as String,
       bio: json['bio'] as String,
+      bioOriginal: json['bioOriginal'] as String? ?? '',
       portfolioImages: (json['portfolioImages'] as List<dynamic>?)
               ?.map((e) => e as String)
               .toList() ??
@@ -22,6 +23,11 @@ _$UserImpl _$$UserImplFromJson(Map<String, dynamic> json) => _$UserImpl(
       gender: json['gender'] as String? ?? 'male',
       birthday: json['birthday'] as String?,
       isProfileCompleted: json['isProfileCompleted'] as bool? ?? false,
+      nationality: json['nationality'] as String?,
+      isOnline: json['isOnline'] as bool?,
+      heightCm: (json['heightCm'] as num?)?.toInt(),
+      weightKg: (json['weightKg'] as num?)?.toInt(),
+      displayId: json['displayId'] as String?,
     );
 
 Map<String, dynamic> _$$UserImplToJson(_$UserImpl instance) =>
@@ -30,6 +36,7 @@ Map<String, dynamic> _$$UserImplToJson(_$UserImpl instance) =>
       'name': instance.name,
       'avatarUrl': instance.avatarUrl,
       'bio': instance.bio,
+      'bioOriginal': instance.bioOriginal,
       'portfolioImages': instance.portfolioImages,
       'remarkName': instance.remarkName,
       'followersCount': instance.followersCount,
@@ -38,4 +45,9 @@ Map<String, dynamic> _$$UserImplToJson(_$UserImpl instance) =>
       'gender': instance.gender,
       'birthday': instance.birthday,
       'isProfileCompleted': instance.isProfileCompleted,
+      'nationality': instance.nationality,
+      'isOnline': instance.isOnline,
+      'heightCm': instance.heightCm,
+      'weightKg': instance.weightKg,
+      'displayId': instance.displayId,
     };
